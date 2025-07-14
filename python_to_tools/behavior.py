@@ -84,7 +84,8 @@ class Agent:
         for name, func in self.tools.items():
             tools.append(Tool.from_func(func))
 
-        request.tools = tools
+        if tools:
+            request.tools = tools
 
         print(request.model_dump_json(indent=4))
 

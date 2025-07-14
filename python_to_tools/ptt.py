@@ -11,6 +11,12 @@ class TaskList(BaseModel):
     list: list[str]
     reasoning: str
 
+    @classmethod
+    def from_str(cls, text: str):
+        text = text.lstrip("```json")
+        text = text.rstrip("```")
+        return cls(**json.loads(text))
+
 class TaskFlowBehavior:
     """
     This is a TaskFlow implementation of agentic behavior.
@@ -86,11 +92,12 @@ class TaskFlowBehavior:
 
         return r
 
+
     def resolve_from_text(self, msg: str):
         """Resolve the given text into, first, a list of tasks, then close each task one by one using our associated
         handler agents."""
         logger.info("Resolving message into task list")
-        task_list = TaskList(**json.loads(self.root_agent.generate_text(msg).content))
+        task_list = TaskList.from_str(self.root_agent.generate_text(msg).content)
         task_results = {}
         history = []
         for task in task_list.list:
