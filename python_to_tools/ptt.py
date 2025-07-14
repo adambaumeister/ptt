@@ -11,18 +11,22 @@ class TaskList(BaseModel):
     list: list[str]
     reasoning: str
 
-class AgenticBehavior:
+class TaskFlowBehavior:
     """
-    The main class for implementing agentic handling of python functions.
+    This is a TaskFlow implementation of agentic behavior.
 
-    The purpose of this class is to accept any number of functions, creating both an index of tools for AI along
-    with the necessary logic structure for invoking them
+    This flow is based on the concept of implementing a lit of tasks to handle based on an original uesr query,
+    then actioning it.
+
+    TaskFlow is very good at handling sync operations, such as one off user messages where the total time to
+    process will be short enough for the user to wait.
     """
     def __init__(
             self,
             root_ai_model: AiModelClient,
             root_agent: Agent = None,
-            handler_agent: Agent = None
+            handler_agent: Agent = None,
+            summary_agent: Agent = None
     ):
         """
         Create an instance of AgenticBehavior
@@ -32,6 +36,10 @@ class AgenticBehavior:
 
         Arguments:
             root_ai_model: Instance of any class that implements `AiModelClient`
+            handler_agent: Instance of any class that implements `Agent`. The Agent is responsible for ahndling each
+                individual task within the generated list, and will contain the bulk of your logic.
+            summary_agent: After the tasks have completed, this agent summarizes and finally provides the ultimate
+                response to the original question.
         """
         self.root_ai_model = root_ai_model
 
@@ -40,6 +48,14 @@ class AgenticBehavior:
             self.root_agent = Agent(
                 agent_name="root",
                 convo_file="root.j2",
+                model=root_ai_model
+            )
+
+        self.summary_agent = summary_agent
+        if not self.summary_agent:
+            self.summary_agent = Agent(
+                agent_name="summary",
+                convo_file="root_summary.j2",
                 model=root_ai_model
             )
 
@@ -66,7 +82,7 @@ class AgenticBehavior:
         """
         r = []
         for name, result in task_results.items():
-            r.append(f"\n<task_output task_name='{name}'>\n{result}</task_output>")
+            r.append(f"I completed the task: {name}, with the following result: \n{result.rstrip()}")
 
         return r
 
@@ -76,10 +92,15 @@ class AgenticBehavior:
         logger.info("Resolving message into task list")
         task_list = TaskList(**json.loads(self.root_agent.generate_text(msg).content))
         task_results = {}
+        history = []
         for task in task_list.list:
             logger.info(f"resolving task: {task}")
             history = self._task_results_to_text(task_results)
             logger.info(f"Adding {len(history)} history to generation step")
             result = self.handler_agent.resolve_from_text(task, history=history)
             task_results[task] = result
-        return task_results
+
+
+        summary = self.summary_agent.resolve_from_text(msg, history)
+
+        return summary, task_results

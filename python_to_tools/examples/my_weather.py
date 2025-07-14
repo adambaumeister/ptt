@@ -1,4 +1,4 @@
-from python_to_tools.ptt import AgenticBehavior
+from python_to_tools.ptt import TaskFlowBehavior
 
-agent = AgenticBehavior()
+agent = TaskFlowBehavior()
 """Initalize the agentic behavior controller"""

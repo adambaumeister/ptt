@@ -65,7 +65,7 @@ class Agent:
         In the future we will support templates for this but for now it's static"""
         r = ""
         for name, result in call_results.items():
-            r += f"\n<tool_output tool_name='{name}'>\n{result}</tool_output>"
+            r += f"I called the tool {name} and it returned: {result}\n"
 
         return r
 
@@ -74,7 +74,10 @@ class Agent:
             text: str,
             history: list[str] = None
     ) -> TextGenerationResponse:
-        """Generate text based on a previous text input"""
+        """Generate text based on a previous text input.
+
+        Will call tools, if tools are given.
+        """
         convo = prompt_template_to_convo(self.convo_file, last_input=text, history=history)
         request = convo.as_text_generation_request()
         tools = []
@@ -82,11 +85,17 @@ class Agent:
             tools.append(Tool.from_func(func))
 
         request.tools = tools
+
+        print(request.model_dump_json(indent=4))
+
         return self.model.get_response(
             request=request,
         )
 
     def resolve_from_text(self, text: str, history: list[str] = None) -> str:
+        """
+        Resolve text into either more text, or a series of tool calls.
+        """
         result = self.generate_text(text, history=history)
         if result.tool_calls:
             call_results = {}
