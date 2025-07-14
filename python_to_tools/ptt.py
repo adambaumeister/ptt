@@ -21,7 +21,7 @@ class TaskFlowBehavior:
     """
     This is a TaskFlow implementation of agentic behavior.
 
-    This flow is based on the concept of implementing a lit of tasks to handle based on an original uesr query,
+    This flow is based on the concept of implementing a lit of tasks to handle based on an original user query,
     then actioning it.
 
     TaskFlow is very good at handling sync operations, such as one off user messages where the total time to
@@ -84,7 +84,10 @@ class TaskFlowBehavior:
         self.handler_agent = agent
 
     def _task_results_to_text(self, task_results: dict[str, str]):
-        """Converts the
+        """Converts completed tasks into a textual representation.
+
+        Within this style of Behavior handler, this step is very important as it's how AI ultimately works out
+        how it did at handling the user's actual query
         """
         r = []
         for name, result in task_results.items():
@@ -106,7 +109,6 @@ class TaskFlowBehavior:
             logger.info(f"Adding {len(history)} history to generation step")
             result = self.handler_agent.resolve_from_text(task, history=history)
             task_results[task] = result
-
 
         summary = self.summary_agent.resolve_from_text(msg, history)
 

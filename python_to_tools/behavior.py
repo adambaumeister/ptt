@@ -34,6 +34,8 @@ class Agent:
 
         Tools will be passed along with any generation task, so the agent can work out if it needs to call a tool
         to service the request.
+
+        When adding tools, ensure the tool will always output PLAIN TEXT!
         """
         self.tools[func.__name__] = func
 
@@ -87,8 +89,6 @@ class Agent:
         if tools:
             request.tools = tools
 
-        print(request.model_dump_json(indent=4))
-
         return self.model.get_response(
             request=request,
         )
@@ -101,7 +101,7 @@ class Agent:
         if result.tool_calls:
             call_results = {}
             for tool_call in result.tool_calls:
-                logger.info(f"Resolving task using tool call {tool_call.name}")
+                logger.info(f"Resolving text resulted in tool call {tool_call.name}")
                 call_results[tool_call.name] = self.call_tool_from_tool_response(tool_call)
 
             return self._tool_call_results_to_text(call_results)
