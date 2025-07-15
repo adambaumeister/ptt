@@ -9,7 +9,7 @@ from python_to_tools.ai.utils import get_model_by_environment_variables
 from python_to_tools.ptt import TaskFlowBehavior
 from python_to_tools.utils import EnvironmentVariables, JinjaConvoLoader
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 class LocationResponse(BaseModel):
     """Response model for locations API"""
@@ -78,4 +78,4 @@ behavior.handler_agent.add_tool(get_weather)
 """Add the tools to the default task handler agent"""
 
 if __name__ == '__main__':
-    print(behavior.resolve_from_text('Get the weather in my current location'))
+    print(behavior.resolve_from_text('Get the weather in my current location').summary)

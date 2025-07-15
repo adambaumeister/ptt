@@ -111,6 +111,7 @@ class CloudflareClient(AiModelClient):
         )
         logger.debug(result)
         if not result.success:
+            logger.info(f"Failed to generate response to {request.messages}")
             raise CloudflareRequestError(
                 f"Cloudflare request failed: {result.errors[0].message}"
             )
