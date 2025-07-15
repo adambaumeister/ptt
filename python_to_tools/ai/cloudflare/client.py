@@ -1,4 +1,5 @@
 import inspect
+from calendar import error
 from json import JSONDecodeError
 from typing import List, Optional, Union, Callable
 
@@ -90,6 +91,7 @@ class CloudflareClient(AiModelClient):
         except JSONDecodeError as e:
             raise CloudflareRequestError("Failed to decode response from cloudflare") from e
 
+
         return response_class(**data)
 
     def _post(
@@ -107,4 +109,9 @@ class CloudflareClient(AiModelClient):
         result = self._read_response(
             self._post(self._get_url(), data=request.model_dump()), CloudflareTextGenerationResponse
         )
+        logger.debug(result)
+        if not result.success:
+            raise CloudflareRequestError(
+                f"Cloudflare request failed: {result.errors[0].message}"
+            )
         return result.to_text_generation_response()

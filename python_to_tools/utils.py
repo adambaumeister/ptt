@@ -1,3 +1,4 @@
+import abc
 import pathlib
 import re
 from typing import Optional
@@ -19,7 +20,7 @@ logging.basicConfig(format="[%(filename)s:%(lineno)s - %(funcName)20s() ] %(mess
 logger.setLevel(logging.INFO)
 """Configure a default logging level (info)"""
 
-template_environment = Environment(loader=PackageLoader('python_to_tools', 'templates'))
+DEFAULT_TEMPLATE_ENVIRONMENT = Environment(loader=PackageLoader('python_to_tools', 'templates'))
 """Get the default prompt template J2 environment"""
 
 class ConvoParseError(Exception):
@@ -104,17 +105,43 @@ class ConvoParser:
             comments=self.comments,
         )
 
-def prompt_template_to_convo(template_name: str, **kwargs) -> Convo:
-    """Convenience function, allows us to store prompt templates as simple files"""
-    template = template_environment.get_template(template_name)
-    rendered_prompt_template = template.render(**kwargs)
-    parser = ConvoParser()
-    return parser.parse_convo_file(rendered_prompt_template)
+class ConvoLoader(abc.ABC):
+    @abc.abstractmethod
+    def to_convo(self, **kwargs):
+        """Convert the given loader to a `Convo` object"""
+        pass
+
+class JinjaConvoLoader(ConvoLoader):
+    """Jinja2 Based Convo Loader
+
+    The simplest method of describing and building agent behavior (i.e Prompts), using Jinja2 templates.
+    """
+    def __init__(
+            self,
+            template_name: str,
+            environment: Environment = None,
+    ):
+        self.environment = environment
+        if not self.environment:
+            self.environment = DEFAULT_TEMPLATE_ENVIRONMENT
+        self.template_name = template_name
+
+    def to_convo(self, **kwargs):
+        return self.prompt_template_to_convo(**kwargs)
+
+    def prompt_template_to_convo(self, **kwargs) -> Convo:
+        """Convenience function, allows us to store prompt templates as simple files"""
+        template = self.environment.get_template(self.template_name)
+        rendered_prompt_template = template.render(**kwargs)
+        parser = ConvoParser()
+        return parser.parse_convo_file(rendered_prompt_template)
+
 
 class EnvironmentVariables(BaseModel):
     """All environment variables that we need get defined in this class"""
     CLOUDFLARE_API_TOKEN: Optional[str] = ""
     CLOUDFLARE_ACCOUNT_ID: Optional[str] = ""
+    CLOUDFLARE_MODEL_ID: Optional[str] = ""
 
     @classmethod
     def load_from_env(cls, dotenv_path: Optional[pathlib.Path] = None):

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from python_to_tools.ai.base import AiModelClient
 from python_to_tools.behavior import Agent
-from python_to_tools.utils import logger
+from python_to_tools.utils import logger, JinjaConvoLoader
 
 
 class TaskList(BaseModel):
@@ -17,6 +17,10 @@ class TaskList(BaseModel):
         text = text.rstrip("```")
         return cls(**json.loads(text))
 
+class TaskFlowResult(BaseModel):
+    summary: str
+    task_output: dict[str, str]
+
 class TaskFlowBehavior:
     """
     This is a TaskFlow implementation of agentic behavior.
@@ -27,6 +31,7 @@ class TaskFlowBehavior:
     TaskFlow is very good at handling sync operations, such as one off user messages where the total time to
     process will be short enough for the user to wait.
     """
+
     def __init__(
             self,
             root_ai_model: AiModelClient,
@@ -53,7 +58,9 @@ class TaskFlowBehavior:
         if not self.root_agent:
             self.root_agent = Agent(
                 agent_name="root",
-                convo_file="root.j2",
+                convo_loader=JinjaConvoLoader(
+                    "root.j2",
+                ),
                 model=root_ai_model
             )
 
@@ -61,12 +68,21 @@ class TaskFlowBehavior:
         if not self.summary_agent:
             self.summary_agent = Agent(
                 agent_name="summary",
-                convo_file="root_summary.j2",
+                convo_loader=JinjaConvoLoader(
+                    "root_summary.j2",
+                ),
                 model=root_ai_model
             )
 
         self.handler_agent = handler_agent
-
+        if not self.handler_agent:
+            self.handler_agent = Agent(
+                agent_name="default_handler_agent",
+                convo_loader=JinjaConvoLoader(
+                    "base_agent.j2",
+                ),
+                model=root_ai_model
+            )
 
     def add_root_agent(self, agent: Agent):
         """Adds the root, top level agent for handling all other requests.
@@ -95,7 +111,6 @@ class TaskFlowBehavior:
 
         return r
 
-
     def resolve_from_text(self, msg: str):
         """Resolve the given text into, first, a list of tasks, then close each task one by one using our associated
         handler agents."""
@@ -112,4 +127,4 @@ class TaskFlowBehavior:
 
         summary = self.summary_agent.resolve_from_text(msg, history)
 
-        return summary, task_results
+        return TaskFlowResult(summary=summary, task_output=task_results)

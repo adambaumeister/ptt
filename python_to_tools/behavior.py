@@ -1,15 +1,18 @@
 import json
 import logging
-from typing import Callable
+from typing import Callable, Any
 
 from python_to_tools.ai.base import AiModelClient
 from python_to_tools.ai.generic_models import Tool, ToolParameter, TextGenerationResponse, ToolCallResponse
 from typing import Annotated
-from python_to_tools.utils import prompt_template_to_convo
+from python_to_tools.utils import ConvoLoader
 
 logger = logging.getLogger(__name__)
 
-class MissingTOolError(Exception):
+class MissingToolError(Exception):
+    pass
+
+class UnserializableResponse(Exception):
     pass
 
 class Agent:
@@ -20,11 +23,11 @@ class Agent:
     def __init__(
             self,
             agent_name: str,
-            convo_file: str,
+            convo_loader: ConvoLoader,
             model: AiModelClient
     ):
         self.agent_name = agent_name
-        self.convo_file = convo_file
+        self.convo_loader = convo_loader
         self.model = model
         self.tools = {}
         self.agents = {}
@@ -38,6 +41,20 @@ class Agent:
         When adding tools, ensure the tool will always output PLAIN TEXT!
         """
         self.tools[func.__name__] = func
+
+    def _response_to_str(self, tool_call_result_model: Any) -> str:
+        """Convert the response from a tool call into a string representation, so that it can be fed back
+        into a large language model.
+
+        This supports string responses, json serializable objects or Pydantic models.
+        """
+        if hasattr(tool_call_result_model, "model_dump"):
+            return json.dumps(tool_call_result_model.model_dump())
+
+        if isinstance(tool_call_result_model, str):
+            return tool_call_result_model
+
+        return str(tool_call_result_model)
 
     def call_tool_from_tool_response(self, tool_call: ToolCallResponse):
         """Executes the given tool, with the given arguments, based on a tool call response object from AI"""
@@ -80,7 +97,7 @@ class Agent:
 
         Will call tools, if tools are given.
         """
-        convo = prompt_template_to_convo(self.convo_file, last_input=text, history=history)
+        convo = self.convo_loader.to_convo(last_input=text, history=history)
         request = convo.as_text_generation_request()
         tools = []
         for name, func in self.tools.items():

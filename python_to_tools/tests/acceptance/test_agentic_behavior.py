@@ -7,6 +7,8 @@ from python_to_tools.ptt import TaskFlowBehavior
 from python_to_tools.tests.acceptance.test_ai_cloudflare_client import (
     cloudflare_text_generation_client_fixture, env_vars
 )
+from python_to_tools.utils import JinjaConvoLoader
+
 
 @pytest.fixture
 def agentic_behavior_fixture(cloudflare_text_generation_client_fixture) -> TaskFlowBehavior:
@@ -28,7 +30,9 @@ def test_get_the_weather(cloudflare_text_generation_client_fixture, agentic_beha
 
     weather_agent = Agent(
         agent_name="weather_agent",
-        convo_file="base_agent.j2",
+        convo_loader=JinjaConvoLoader(
+            "base_agent.j2",
+        ),
         model=cloudflare_text_generation_client_fixture
     )
     weather_agent.add_tool(get_user_location)
