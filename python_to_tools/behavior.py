@@ -3,6 +3,7 @@ import logging
 from typing import Callable, Any
 
 from click.testing import Result
+from pydantic import InstanceOf
 
 from python_to_tools.ai.base import AiModelClient
 from python_to_tools.ai.generic_models import Tool, ToolParameter, TextGenerationResponse, ToolCallResponse
@@ -56,6 +57,13 @@ class Agent:
         self.description = description
         self.max_recursion = max_recursion
 
+    def add_tools_from_object(self, obj: Any):
+        """Adds all of the class object methods from the given object as tools attached to this agent.
+        """
+        for method in [m for m in dir(obj) if callable(getattr(obj, m))]:
+            self.add_tool(getattr(obj, method))
+
+
     def add_tool(self, func: Callable):
         """Adds the given python function as a tool available to this agent.
 
@@ -64,6 +72,8 @@ class Agent:
 
         When adding tools, ensure the tool will always output PLAIN TEXT!
         """
+        if func.__name__ in self.tools:
+            logger.warning(f"Naming conflict between tools: {func.__name__} is already registered to this agent.")
         self.tools[func.__name__] = func
 
     def _response_to_str(self, tool_call_result_model: Any) -> str:
@@ -150,7 +160,6 @@ class Agent:
         if tools:
             request.tools = tools
 
-        print(request.model_dump_json(indent=4))
         return self.model.get_response(
             request=request,
         )
