@@ -2,6 +2,8 @@ import json
 import logging
 from typing import Callable, Any
 
+from click.testing import Result
+
 from python_to_tools.ai.base import AiModelClient
 from python_to_tools.ai.generic_models import Tool, ToolParameter, TextGenerationResponse, ToolCallResponse
 from typing import Annotated
@@ -162,7 +164,6 @@ class Agent:
         Resolve text into either more text, or a series of tool calls.
         """
         result = self.generate_text(text, history=history)
-
         if result.tool_calls:
             if result.tool_calls[0].name == "next_agent":
                 tool_call = result.tool_calls[0]
