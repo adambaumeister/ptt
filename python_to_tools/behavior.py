@@ -9,10 +9,16 @@ from python_to_tools.utils import ConvoLoader
 
 logger = logging.getLogger(__name__)
 
+
 class MissingToolError(Exception):
     pass
 
+
 class UnserializableResponse(Exception):
+    pass
+
+
+class AgentRecursionDepthExceeded(Exception):
     pass
 
 class Agent:
@@ -24,13 +30,29 @@ class Agent:
             self,
             agent_name: str,
             convo_loader: ConvoLoader,
-            model: AiModelClient
+            model: AiModelClient,
+            description: str = "",
+            max_recursion=2,
     ):
+        """
+        Create an `Agent` for servicing requests.
+
+        Arguments:
+            agent_name: The name of the agent.
+            convo_loader: A ConvoLoader object, used for getting the chat message templates we use to convert to
+                textual prompts for the model
+            model: The AiModelClient to use for resolving requests using the agent
+            description: The description of the agent itself, this is important when connecting child agents using
+                `add_agent`.
+            max_recursion: The maximum depth we will go when calling other agents to resolve a query
+        """
         self.agent_name = agent_name
         self.convo_loader = convo_loader
         self.model = model
         self.tools = {}
         self.agents = {}
+        self.description = description
+        self.max_recursion = max_recursion
 
     def add_tool(self, func: Callable):
         """Adds the given python function as a tool available to this agent.
@@ -56,8 +78,17 @@ class Agent:
 
         return str(tool_call_result_model)
 
+    def _get_agent_by_name(self, agent_name: str) -> "Agent":
+        """Returns the matching agent attached to this object, or raises if it's not available"""
+        agent = self.agents.get(agent_name)
+        if not agent:
+            raise ValueError("Agent '{}' not found!".format(agent_name))
+
+        return agent
+
     def call_tool_from_tool_response(self, tool_call: ToolCallResponse):
         """Executes the given tool, with the given arguments, based on a tool call response object from AI"""
+
         if tool_call.name not in self.tools:
             raise ValueError(f"tool call {tool_call.name} is not available")
 
@@ -75,7 +106,11 @@ class Agent:
             agent_name: Annotated[
                 str, ToolParameter(type="string", description="The name of the agent to forward the task to")]
     ):
-        """Call the next agent to handle this message or task."""
+        """Use this tool if you cannot accomplish the given task.
+
+        This tool is useful when you cannot handle the request yourself. You can call this tool to pass it to
+        another agent that may have more tool access.
+        """
         pass
 
     def _tool_call_results_to_text(self, call_results: dict[str, str]):
@@ -100,22 +135,45 @@ class Agent:
         convo = self.convo_loader.to_convo(last_input=text, history=history)
         request = convo.as_text_generation_request()
         tools = []
+        if self.agents:
+            agent_tool = Tool.from_func(self.next_agent)
+            agent_tool.description += """You can select from the following agents:\n"""
+            agent_tool.description += "\n".join([f" - {k}: {v.description}" for k, v in self.agents.items()])
+            logger.info(agent_tool.description)
+            tools.append(agent_tool)
+
         for name, func in self.tools.items():
             tools.append(Tool.from_func(func))
 
         if tools:
             request.tools = tools
 
+        print(request.model_dump_json(indent=4))
         return self.model.get_response(
             request=request,
         )
 
-    def resolve_from_text(self, text: str, history: list[str] = None) -> str:
+    def resolve_from_text(
+            self, text: str,
+            history: list[str] = None,
+            depth=0
+    ) -> str:
         """
         Resolve text into either more text, or a series of tool calls.
         """
         result = self.generate_text(text, history=history)
+
         if result.tool_calls:
+            if result.tool_calls[0].name == "next_agent":
+                tool_call = result.tool_calls[0]
+                next_agent = self._get_agent_by_name(tool_call.arguments.get("agent_name"))
+                if depth < self.max_recursion:
+                    logger.info(f"Trying to resolve using the next agent at depth {depth} (max: {self.max_recursion})")
+                    depth += 1
+                    return next_agent.resolve_from_text(text, history=history, depth=depth)
+                else:
+                    raise AgentRecursionDepthExceeded(f"Max agent recurison depth exceeded: {depth}. ")
+
             call_results = {}
             for tool_call in result.tool_calls:
                 logger.info(f"Resolving text resulted in tool call {tool_call.name}")
@@ -124,5 +182,3 @@ class Agent:
             return self._tool_call_results_to_text(call_results)
 
         return result.content
-
-
