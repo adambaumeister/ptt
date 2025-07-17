@@ -62,13 +62,21 @@ class CloudflareClient(AiModelClient):
             model_type: ModelTypeEnum = ModelTypeEnum.text_generation
     ):
         """
-        Supports AI Models hosted in the Cloudflare `Workers AI` infrastructure/
+        Supports AI Models hosted in the Cloudflare `Workers AI` infrastructure.
 
         Arguments:
             account_id (str): Your Cloudflare Account ID
             api_token (str): Your Cloudflare API Token
             model_id (str): The model to use in workers AI
             model_type (ModelTypeEnum): Type of the model, defaults to 'text_generation'
+
+        Examples:
+            >>> from python_to_tools.ai.cloudflare import CloudflareClient
+            >>> client = CloudFlareClient(
+            >>>     account_id='your-account-id',
+            >>>     api_token='your-api-token',
+            >>>     model_id='your-model-id',
+            >>> )
         """
         super().__init__([model_type])
         self.account_id = account_id

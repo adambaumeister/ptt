@@ -138,10 +138,16 @@ class JinjaConvoLoader(ConvoLoader):
 
 
 class EnvironmentVariables(BaseModel):
-    """All environment variables that we need get defined in this class"""
+    """All environment variables that we need get defined in this class
+    """
     CLOUDFLARE_API_TOKEN: Optional[str] = ""
+    """Cloudflare API token"""
+
     CLOUDFLARE_ACCOUNT_ID: Optional[str] = ""
+    """Cloudflare Account ID"""
+
     CLOUDFLARE_MODEL_ID: Optional[str] = ""
+    """Cloudflare Model ID"""
 
     @classmethod
     def load_from_env(cls, dotenv_path: Optional[pathlib.Path] = None):

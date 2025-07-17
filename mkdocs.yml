@@ -16,6 +16,8 @@ nav:
   - Python-To-Tools: index.md
   - Examples:
       - Task-Based Example (my_weather): examples/my_weather.md
+  - Configuration:
+      - AI Models: configuration/models.md
 
 plugins:
   - mkdocstrings:
