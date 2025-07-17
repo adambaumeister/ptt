@@ -1,0 +1,22 @@
+site_name: Python-To-Tools Documentation
+site_url: https://mydomain.org/mysite
+theme:
+  name: material
+  logo: static/logo.svg
+  features:
+    - navigation.tabs
+    - navigation.tracking
+markdown_extensions:
+  - md_in_html
+  - attr_list
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+nav:
+  - Python-To-Tools: index.md
+  - Examples:
+      - Task-Based Example (my_weather): examples/my_weather.md
+
+plugins:
+  - mkdocstrings:
+      default_handler: python
