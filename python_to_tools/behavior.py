@@ -24,6 +24,9 @@ class UnserializableResponse(Exception):
 class AgentRecursionDepthExceeded(Exception):
     pass
 
+class ToolCallGotInvalidArguments(Exception):
+    pass
+
 class Agent:
     """
     An Agent implements a series of tools and a root prompt. it can perform actions, collect data, etc.
@@ -106,7 +109,10 @@ class Agent:
 
         tool = self.tools.get(tool_call.name)
         arguments = tool_call.arguments
-        return tool(**arguments)
+        try:
+            return tool(**arguments)
+        except TypeError as e:
+            raise ToolCallGotInvalidArguments(f"Tool call {tool_call.name} has invalid arguments: {arguments}") from e
 
     def add_agent(self, agent: "Agent"):
         """Add another agent to the agent tree at this node."""
@@ -192,3 +198,4 @@ class Agent:
             return self._tool_call_results_to_text(call_results)
 
         return result.content
+

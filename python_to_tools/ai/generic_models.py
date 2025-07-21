@@ -1,8 +1,9 @@
 import inspect
+import json
 from enum import Enum
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, AliasChoices, field_validator
 
 
 class ToolParameter(BaseModel):
@@ -86,6 +87,14 @@ class ToolCallResponse(BaseModel):
     """Generic representation of a tool call by AI"""
     name: str
     arguments: dict[str, Any] = {}
+
+    @field_validator("arguments", mode='before')
+    @classmethod
+    def parse_args(cls, value: Union[str, dict]):
+        if isinstance(value, str):
+            return json.loads(value)
+
+        return value
 
 class TextGenerationResponse(BaseModel):
     """Generic, API independent Text Generation Response Model"""

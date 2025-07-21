@@ -10,3 +10,8 @@ def env_vars():
     return EnvironmentVariables.load_from_env(
         dotenv_path=pathlib.Path(__file__).parent.parent.parent.parent.joinpath(".env")
     )
+
+@pytest.fixture
+def acceptance_test_results():
+    fp = pathlib.Path(__file__).parent.parent.parent.parent.joinpath("docs").joinpath("acceptance.md")
+    return open(fp, "w")

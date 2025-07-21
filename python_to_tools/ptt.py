@@ -107,7 +107,8 @@ class TaskFlowBehavior:
         """
         r = []
         for name, result in task_results.items():
-            r.append(f"I completed the task: {name}, with the following result: \n{result.rstrip()}")
+            if result:
+                r.append(f"I completed the task: {name}, with the following result: \n{result.rstrip()}")
 
         return r
 

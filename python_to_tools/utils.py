@@ -149,6 +149,12 @@ class EnvironmentVariables(BaseModel):
     CLOUDFLARE_MODEL_ID: Optional[str] = ""
     """Cloudflare Model ID"""
 
+    OPENAI_MODEL_ID: Optional[str] = ""
+    """OpenAI Model ID"""
+
+    OPENAI_BASE_URL: Optional[str] = ""
+    """OpenAI Base URL"""
+
     @classmethod
     def load_from_env(cls, dotenv_path: Optional[pathlib.Path] = None):
         if dotenv_path:

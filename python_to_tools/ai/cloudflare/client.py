@@ -85,10 +85,6 @@ class CloudflareClient(AiModelClient):
         self.session_factory = BearerAuthenticatedSessionFactory(self.api_token)
 
 
-    def _get_session(self):
-        """Returns an authenticated session, for use with requests"""
-        return self.session_factory()
-
     def _get_url(self):
         return f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run/{self.model_id}"
 
@@ -102,13 +98,6 @@ class CloudflareClient(AiModelClient):
 
         return response_class(**data)
 
-    def _post(
-            self,
-            url: str,
-            data: Union[dict, list]
-    ):
-        """Generic HTTP Post method."""
-        return self._get_session().post(url, json=data)
 
     def get_response(self, request: Union[CloudflareRequest, TextGenerationRequest]) -> TextGenerationResponse:
         """
