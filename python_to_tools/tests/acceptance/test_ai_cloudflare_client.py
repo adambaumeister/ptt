@@ -1,16 +1,10 @@
 import sys
 
 import pytest
-import logging
 from python_to_tools.ai.generic_models import MessageRoleEnum, Tool, ToolParameters, ToolParameter
 from python_to_tools.ai.cloudflare.client import CloudflareClient
 from python_to_tools.utils import logger
 from python_to_tools.tests.acceptance.fixtures import env_vars
-
-stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setFormatter(logging.Formatter("#PYTEST#[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"))
-logger.addHandler(stream_handler)
-"""Enable logging for tests and set the format"""
 
 @pytest.fixture()
 def cloudflare_text_generation_client_fixture(env_vars):

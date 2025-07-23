@@ -6,6 +6,7 @@ theme:
   features:
     - navigation.tabs
     - navigation.tracking
+    - content.code.copy
 markdown_extensions:
   - md_in_html
   - attr_list
@@ -17,6 +18,7 @@ nav:
   - Examples:
       - Task-Based Example (my_weather): examples/my_weather.md
   - Configuration:
+      - Environment Variables: configuration/envvars.md
       - AI Models: configuration/models.md
 
 plugins:

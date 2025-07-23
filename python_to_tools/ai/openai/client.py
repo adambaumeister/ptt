@@ -1,6 +1,7 @@
 from typing import Union, Optional, Callable
 
 import openai
+import requests
 from openai.types.chat import ChatCompletionToolParam
 
 from python_to_tools.ai.base import AiModelClient, ModelTypeEnum
@@ -8,18 +9,62 @@ from python_to_tools.ai.generic_models import TextGenerationRequest, TextGenerat
 from python_to_tools.ai.generic_sessions import BearerAuthenticatedSessionFactory
 from python_to_tools.ai.google.auth import GoogleNativeSessionFactory
 
+class UnauthenticatedSessionFactory():
+    def __init__(self, verify: bool = True):
+        self.verify = verify
+
+    def __call__(self):
+        session = requests.Session()
+        session.verify = self.verify
+
 class OpenAIClient(AiModelClient):
-    """Wraps the OpenAI Client to only return the generic response models"""
+    """OpenAI API compatible model client.
+    """
     def __init__(
             self,
             base_url: str,
             session_factory: Optional[Union[
-                BearerAuthenticatedSessionFactory, GoogleNativeSessionFactory
+                BearerAuthenticatedSessionFactory, GoogleNativeSessionFactory, UnauthenticatedSessionFactory
             ]] = None,
             model: str = "",
             model_type: ModelTypeEnum = ModelTypeEnum.text_generation
 
     ):
+        """This model supports any API that conforms to the OpenAI schema, which is most of them at the time of writing.
+
+        Arguments:
+            base_url: Path to the OpenAI API base URL
+            model: The model ID to use
+            session_factory: The session factory to use for making requests.
+
+        Examples:
+
+            from python_to_tools.ai.openai.client import OpenAIClient
+            from python_to_tools.ai.google.auth import GoogleNativeSessionFactory
+            client = OpenAIClient(
+                 model=env_vars.OPENAI_MODEL_ID,
+                 base_url='https://example.com/openai',
+                 session_factory=GoogleNativeSessionFactory()
+            )
+
+        Example (Basic Bearer token authentication):
+
+            from python_to_tools.ai.openai.client import OpenAIClient
+            client = OpenAIClient(
+                 model=env_vars.OPENAI_MODEL_ID,
+                 base_url='https://example.com/openai',
+                 session_factory=BearerAuthenticatedSessionFactory("my-token-here")
+            )
+
+        Example (Unauthenticated):
+
+            from python_to_tools.ai.openai.client import OpenAIClient, UnauthenticatedSessionFactory
+            client = OpenAIClient(
+                model=env_vars.OPENAI_MODEL_ID,
+                base_url='https://example.com/openai',
+                session_factory=UnauthenticatedSessionFactory()
+            )
+        """
         super().__init__([model_type])
         self.base_url = base_url
         self.session_factory = session_factory

@@ -27,12 +27,15 @@ class ConvoParseError(Exception):
     pass
 
 class Convo(BaseModel):
-    """Object representation of an entire conversation"""
+    """Object representation of an entire conversation.
+
+    `convo` objects are designed to be portable between models and types of agentic behavior. """
     messages: list[Message]
     comments: str
     metadata: dict
 
     def as_text_generation_request(self):
+        """Convert this object into the generic, model compatible text generation request"""
         return TextGenerationRequest(
             messages=self.messages,
         )

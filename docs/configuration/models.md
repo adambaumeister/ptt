@@ -5,12 +5,15 @@ Everything in this library relies on the connectivity to AI models to function.
 We provide basic wrappers for OpenAI compatible endpoints, as well as vendor specific where it makes sense (such as
 the Cloudflare, or Google Vertex APIs).
 
-## Environment Variables
+## OpenAI Compatible
 
-Most of the time, you're just using one model with this package. To simplify this, you can automatically retrieve
-the AI model based on the configured AI models.
+You can use this model definition for any OpenAI API compatible endpoint. At the time of writing, this includes 
+Vertex AI, OpenAI (obviously) and HuggingFace's text-generation-inference API.
 
-::: python_to_tools.utils.EnvironmentVariables
+::: python_to_tools.ai.openai.client.OpenAIClient.__init__
+    options:
+        toc_label: "Cloudflare AI Client"
+        show_root_toc_entry: false
 
 ## Cloudflare API
 

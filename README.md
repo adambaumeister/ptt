@@ -21,15 +21,15 @@ With PTT, you write Python code, then attach it to AI "Agents". Then you ask tho
 
 ## Supported Models
 
- Provider   | Model                                    | Standard Agentic Behavior | Recursive Agentic Behavior* 
+ Provider   | Model                                    | Standard Agentic Behavior | Recursive Agentic Behavior 
 ------------|------------------------------------------|---------------------------|-----------------------------|
- Cloudflare | @cf/meta/llama-3.3-70b-instruct-fp8-fast | ✅                         | ❌                           | 
- Cloudflare | @cf/meta/llama-4-scout-17b-16e-instruct  | ✅                         | ❌                           | 
+ Cloudflare | @cf/meta/llama-3.3-70b-instruct-fp8-fast | ✅                         | ✅                           | 
+ Cloudflare | @cf/meta/llama-4-scout-17b-16e-instruct  | ✅                         | ✅                           | 
+ Google     | google/gemini-2.5-flash                  | ✅                         | ✅                           | 
 
-*Recursive agentic behavior refers to the use case where you have agents assigned to other agents for given tasks.
-Some models appear unable to understand the concept of 'if you can't do this, call this instead'.
 
-## Philosophy 
+
+## Philosophy
 
 The philosophy of this project is to enable developers to enhance their apps with Agentic AI without requiring a lot of
 major code changes or to fully commit to writing a full MCP host.

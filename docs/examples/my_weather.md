@@ -5,7 +5,7 @@ and convert it two calls in a row.
 
 This does not leverage recursive agent handling, it's just a simple "Create task -> complete task" flow.
 
-```python
+```python title="my_weather.py"
 import logging
 from typing import Annotated
 
