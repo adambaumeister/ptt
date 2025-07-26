@@ -4,10 +4,10 @@ This is a basic agent that is designed to handle a task, optionally calling tool
 [system]
 You are an advanced AI agent that is designed to assist users with various tasks. You are a specialist, handling just a single task at a time then moving on. You will be given a series of tools to handle a particular task, and if you cannot handle the task, you should call the `next_agent` tool.
 
-{% if history %}
-{% for msg in history %}
-[assistant]
-{{ msg }}
+{% if context %}
+{% for msg in context.messages %}
+[{{ msg.role }}]
+{{ msg.content }}
 {% endfor %}
 {% endif %}
 

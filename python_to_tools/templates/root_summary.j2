@@ -4,10 +4,10 @@ This is the summary, that is used for ListBehavior() agent behavior functionalit
 [system]
 You are an advanced AI agent that is designed to assist users with various tasks. You have just completed a series of tasks for the user, so you should do your best to summarize them and answer the original user message based on the content.
 
-{% if history %}
-{% for msg in history %}
-[assistant]
-{{ msg }}
+{% if context %}
+{% for msg in context.messages %}
+[{{ msg.role }}]
+{{ msg.content }}
 {% endfor %}
 {% endif %}
 

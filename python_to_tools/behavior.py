@@ -8,6 +8,8 @@ from pydantic import InstanceOf
 from python_to_tools.ai.base import AiModelClient
 from python_to_tools.ai.generic_models import Tool, ToolParameter, TextGenerationResponse, ToolCallResponse
 from typing import Annotated
+
+from python_to_tools.context import Context
 from python_to_tools.utils import ConvoLoader
 
 logger = logging.getLogger(__name__)
@@ -144,13 +146,13 @@ class Agent:
     def generate_text(
             self,
             text: str,
-            history: list[str] = None
+            context: Context = None
     ) -> TextGenerationResponse:
         """Generate text based on a previous text input.
 
         Will call tools, if tools are given.
         """
-        convo = self.convo_loader.to_convo(last_input=text, history=history)
+        convo = self.convo_loader.to_convo(last_input=text, context=context)
         request = convo.as_text_generation_request()
         tools = []
         if self.agents:
@@ -172,13 +174,13 @@ class Agent:
 
     def resolve_from_text(
             self, text: str,
-            history: list[str] = None,
+            context: Context = None,
             depth=0
     ) -> str:
         """
         Resolve text into either more text, or a series of tool calls.
         """
-        result = self.generate_text(text, history=history)
+        result = self.generate_text(text, context=context)
         if result.tool_calls:
             if result.tool_calls[0].name == "next_agent":
                 tool_call = result.tool_calls[0]
@@ -186,7 +188,7 @@ class Agent:
                 if depth < self.max_recursion:
                     logger.info(f"Trying to resolve using the next agent at depth {depth} (max: {self.max_recursion})")
                     depth += 1
-                    return next_agent.resolve_from_text(text, history=history, depth=depth)
+                    return next_agent.resolve_from_text(text, context=context, depth=depth)
                 else:
                     raise AgentRecursionDepthExceeded(f"Max agent recurison depth exceeded: {depth}. ")
 

@@ -3,7 +3,9 @@ import json
 from pydantic import BaseModel
 
 from python_to_tools.ai.base import AiModelClient
+from python_to_tools.ai.generic_models import MessageRoleEnum
 from python_to_tools.behavior import Agent
+from python_to_tools.context import Context, MemoryContext
 from python_to_tools.utils import logger, JinjaConvoLoader
 
 
@@ -37,7 +39,8 @@ class TaskFlowBehavior:
             root_ai_model: AiModelClient,
             root_agent: Agent = None,
             handler_agent: Agent = None,
-            summary_agent: Agent = None
+            summary_agent: Agent = None,
+            context: Context = None
     ):
         """
         Create an instance of AgenticBehavior
@@ -51,8 +54,13 @@ class TaskFlowBehavior:
                 individual task within the generated list, and will contain the bulk of your logic.
             summary_agent: After the tasks have completed, this agent summarizes and finally provides the ultimate
                 response to the original question.
+            context: Stores, and provides access to, context for each request.
         """
         self.root_ai_model = root_ai_model
+
+        self.context = context
+        if not self.context:
+            self.context = MemoryContext()
 
         self.root_agent = root_agent
         if not self.root_agent:
@@ -99,18 +107,16 @@ class TaskFlowBehavior:
         """Adds a handler agent to this behavior object. Note that agents all function as a tree!"""
         self.handler_agent = agent
 
-    def _task_results_to_text(self, task_results: dict[str, str]):
+    def _task_results_to_text(self, name: str, result: str):
         """Converts completed tasks into a textual representation.
 
         Within this style of Behavior handler, this step is very important as it's how AI ultimately works out
         how it did at handling the user's actual query
         """
-        r = []
-        for name, result in task_results.items():
-            if result:
-                r.append(f"I completed the task: {name}, with the following result: \n{result.rstrip()}")
+        if result:
+            return f"I completed the task: {name}, with the following result: \n{result.rstrip()}"
 
-        return r
+        return None
 
     def resolve_from_text(self, msg: str):
         """Resolve the given text into, first, a list of tasks, then close each task one by one using our associated
@@ -118,14 +124,14 @@ class TaskFlowBehavior:
         logger.info("Resolving message into task list")
         task_list = TaskList.from_str(self.root_agent.generate_text(msg).content)
         task_results = {}
-        history = []
+
         for task in task_list.list:
             logger.info(f"resolving task: {task}")
-            history = self._task_results_to_text(task_results)
-            logger.info(f"Adding {len(history)} history to generation step")
-            result = self.handler_agent.resolve_from_text(task, history=history)
-            task_results[task] = result
+            result = self.handler_agent.resolve_from_text(task, context=self.context)
+            self.context.add_message(
+                self._task_results_to_text(task, result), role=MessageRoleEnum.assistant
+            )
 
-        summary = self.summary_agent.resolve_from_text(msg, history)
+        summary = self.summary_agent.resolve_from_text(msg, context=self.context)
 
         return TaskFlowResult(summary=summary, task_output=task_results)
