@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format="[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s")
 """Set the default logging format"""
 
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 """Configure a default logging level (info)"""
 
 DEFAULT_TEMPLATE_ENVIRONMENT = Environment(loader=PackageLoader('python_to_tools', 'templates'))

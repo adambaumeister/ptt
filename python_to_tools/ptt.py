@@ -19,9 +19,12 @@ class TaskList(BaseModel):
         text = text.rstrip("```")
         return cls(**json.loads(text))
 
+
 class TaskFlowResult(BaseModel):
     summary: str
+    success: bool
     task_output: dict[str, str]
+
 
 class TaskFlowBehavior:
     """
@@ -40,20 +43,39 @@ class TaskFlowBehavior:
             root_agent: Agent = None,
             handler_agent: Agent = None,
             summary_agent: Agent = None,
+            review_agent: Agent = None,
             context: Context = None
     ):
-        """
-        Create an instance of AgenticBehavior
+        """This behavior first creates a "task list" using the root_agent.
 
-        You must provide a  Root AI model which functions as the base for the initial decision-making, including
-        the creation of the top level task list.
+        The **root_agent** MUST return a JSON str in the format;
+
+        ```json
+        {
+            tasks: [],
+            reasoning: ""
+        }
+        ```
+
+        Each task within the task list is then passed, in sequence, to teh **handler_agent**. The **handler_agent**
+        will solve the task, returning the result, or pass it to it's own sub agents.
+
+        After each response, the **review_agent** will review the resutl and determine if it was a success. If so,
+        it will continue, otherwise it will stop processing further tasks.
+
+        Regardless of success or failure, all of the tasks and their results will ultimately be summarized for the
+        user along with whether the original request was solved.
 
         Arguments:
-            root_ai_model: Instance of any class that implements `AiModelClient`
-            handler_agent: Instance of any class that implements `Agent`. The Agent is responsible for ahndling each
+            root_ai_model: Instance of any class that implements `AiModelClient`,
+            root_agent: Instance of any class that implements `Agent`. This agent is responsible for creating a task
+                list.
+            handler_agent: Instance of any class that implements `Agent`. The Agent is responsible for handling each
                 individual task within the generated list, and will contain the bulk of your logic.
             summary_agent: After the tasks have completed, this agent summarizes and finally provides the ultimate
                 response to the original question.
+            review_agent: After each task, this agent will review the result to determine if the process has been
+                successful thus far - if not, we can exit early
             context: Stores, and provides access to, context for each request.
 
         Examples:
@@ -96,6 +118,16 @@ class TaskFlowBehavior:
                 model=root_ai_model
             )
 
+        self.review_agent = review_agent
+        if not self.review_agent:
+            self.review_agent = Agent(
+                agent_name="reviewer_agent",
+                convo_loader=JinjaConvoLoader(
+                    "task_review_agent.j2",
+                ),
+                model=root_ai_model
+            )
+
     def add_root_agent(self, agent: Agent):
         """Adds the root, top level agent for handling all other requests.
 
@@ -118,7 +150,7 @@ class TaskFlowBehavior:
         how it did at handling the user's actual query
         """
         if result:
-            return f"I completed the task: {name}, with the following result: \n{result.rstrip()}"
+            return f"Task result:\nTask name: {name}. Result: \n{result.rstrip()}"
 
         return None
 
@@ -129,13 +161,21 @@ class TaskFlowBehavior:
         task_list = TaskList.from_str(self.root_agent.generate_text(msg).content)
         task_results = {}
 
+        success = True
         for task in task_list.list:
-            logger.info(f"resolving task: {task}")
-            result = self.handler_agent.resolve_from_text(task, context=self.context)
-            self.context.add_message(
-                self._task_results_to_text(task, result), role=MessageRoleEnum.assistant
-            )
+            if success:
+                logger.info(f"resolving task: {task}")
+                result = self.handler_agent.resolve_from_text(task, context=self.context)
+                self.context.add_message(
+                    self._task_results_to_text(task, result), role=MessageRoleEnum.assistant
+                )
+                logger.debug(result)
+                review_result = self.review_agent.resolve_from_text(result)
+                if "YES" not in review_result:
+                    logger.warning(f"Could not resolve task: {task}. {result}")
+                    success = False
+
 
         summary = self.summary_agent.resolve_from_text(msg, context=self.context)
 
-        return TaskFlowResult(summary=summary, task_output=task_results)
+        return TaskFlowResult(summary=summary, task_output=task_results, success=success)

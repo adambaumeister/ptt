@@ -56,6 +56,22 @@ def test_get_the_weather_cloudflare(
     result = behavior.resolve_from_text("get me the weather in my current location")
     acceptance_test_results.write(f"## Cloudflare AI - test_get_the_weather_cloudflare - Get the Weather\n{result.summary}\n")
 
+def test_get_the_weather_cloudflare_failure(
+        cloudflare_text_generation_client_fixture,
+        agentic_behavior_fixture,
+        acceptance_test_results
+):
+    """Test the situation where the agent fails - should provide a nice summary describing the failure"""
+    from python_to_tools.ptt import TaskFlowBehavior
+    behavior = TaskFlowBehavior(root_ai_model=cloudflare_text_generation_client_fixture)
+
+    weather_agent = get_weather_agent(cloudflare_text_generation_client_fixture)
+    weather_agent.tools = {}
+    behavior.add_task_handler_agent(weather_agent)
+    result = behavior.resolve_from_text("get me the weather in my current location")
+    acceptance_test_results.write(f"## Cloudflare AI - test_get_the_weather_cloudflare_failure - "
+                                  f"Get the Weather With Missing Tools\n{result.summary}\n")
+
 def test_get_the_weather_sub_agents_cloudflare(
         cloudflare_text_generation_client_fixture, agentic_behavior_fixture, acceptance_test_results
 ):
