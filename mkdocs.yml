@@ -17,6 +17,11 @@ nav:
   - Python-To-Tools: index.md
   - Examples:
       - Task-Based Example (my_weather): examples/my_weather.md
+  - Learn:
+      - Agents: learn/agents.md
+      - Behavior: learn/behavior.md
+      - Context: learn/context.md
+      - Functions and Tools: learn/functions.md
   - Configuration:
       - Environment Variables: configuration/envvars.md
       - AI Models: configuration/models.md

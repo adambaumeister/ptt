@@ -32,7 +32,7 @@ def get_weather_agent(model):
     weather_agent = Agent(
         agent_name="weather_agent",
         convo_loader=JinjaConvoLoader(
-            "base_agent.j2",
+            "single_task_agent.j2",
         ),
         model=model
     )
@@ -67,7 +67,7 @@ def test_get_the_weather_sub_agents_cloudflare(
     general_agent = Agent(
         agent_name="general_agent",
         convo_loader=JinjaConvoLoader(
-            "base_agent.j2",
+            "single_task_agent.j2",
         ),
         model=cloudflare_text_generation_client_fixture,
         description="Basic, general knowledge and data processing agent."
@@ -76,7 +76,7 @@ def test_get_the_weather_sub_agents_cloudflare(
     weather_agent = Agent(
         agent_name="weather_agent",
         convo_loader=JinjaConvoLoader(
-            "base_agent.j2",
+            "single_task_agent.j2",
         ),
         model=cloudflare_text_generation_client_fixture,
         description = "Has a suite of tools for getting weather details"
@@ -84,7 +84,7 @@ def test_get_the_weather_sub_agents_cloudflare(
     location_agent = Agent(
         agent_name="location_agent",
         convo_loader=JinjaConvoLoader(
-            "base_agent.j2",
+            "single_task_agent.j2",
         ),
         model=cloudflare_text_generation_client_fixture,
         description="Has the ability to resolve a user location to a city and latitude/longitude coordinates."
@@ -127,7 +127,7 @@ def test_get_the_weather_sub_agents_google(
     general_agent = Agent(
         agent_name="general_agent",
         convo_loader=JinjaConvoLoader(
-            "base_agent.j2",
+            "single_task_agent.j2",
         ),
         model=openai_client_fixture,
         description="Basic, general knowledge and data processing agent."
@@ -136,7 +136,7 @@ def test_get_the_weather_sub_agents_google(
     weather_agent = Agent(
         agent_name="weather_agent",
         convo_loader=JinjaConvoLoader(
-            "base_agent.j2",
+            "single_task_agent.j2",
         ),
         model=openai_client_fixture,
         description = "Has a suite of tools for getting weather details"
@@ -144,7 +144,7 @@ def test_get_the_weather_sub_agents_google(
     location_agent = Agent(
         agent_name="location_agent",
         convo_loader=JinjaConvoLoader(
-            "base_agent.j2",
+            "single_task_agent.j2",
         ),
         model=openai_client_fixture,
         description="Has the ability to resolve a user location to a city and latitude/longitude coordinates."

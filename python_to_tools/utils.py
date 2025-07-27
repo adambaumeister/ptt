@@ -124,6 +124,14 @@ class JinjaConvoLoader(ConvoLoader):
             template_name: str,
             environment: Environment = None,
     ):
+        """
+        Create a Jinja2 Convo loader. If an environment is not provided, we will use the default templates shipped
+        with this library.
+
+        Arguments:
+            template_name (str): The name of the Jinja template to use.
+            environment (Environment): The Jinja2 environment to use.
+        """
         self.environment = environment
         if not self.environment:
             self.environment = DEFAULT_TEMPLATE_ENVIRONMENT
@@ -157,6 +165,9 @@ class EnvironmentVariables(BaseModel):
 
     OPENAI_BASE_URL: Optional[str] = ""
     """OpenAI Base URL"""
+
+    OPENAI_API_TOKEN: Optional[str] = ""
+    """OpenAI Compatible API token"""
 
     @classmethod
     def load_from_env(cls, dotenv_path: Optional[pathlib.Path] = None):

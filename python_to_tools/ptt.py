@@ -55,6 +55,10 @@ class TaskFlowBehavior:
             summary_agent: After the tasks have completed, this agent summarizes and finally provides the ultimate
                 response to the original question.
             context: Stores, and provides access to, context for each request.
+
+        Examples:
+            >>> from python_to_tools.ptt import TaskFlowBehavior
+            >>> behavior = TaskFlowBehavior(root_ai_model=model)
         """
         self.root_ai_model = root_ai_model
 
@@ -67,7 +71,7 @@ class TaskFlowBehavior:
             self.root_agent = Agent(
                 agent_name="root",
                 convo_loader=JinjaConvoLoader(
-                    "root.j2",
+                    "task_master_agent.j2",
                 ),
                 model=root_ai_model
             )
@@ -87,7 +91,7 @@ class TaskFlowBehavior:
             self.handler_agent = Agent(
                 agent_name="default_handler_agent",
                 convo_loader=JinjaConvoLoader(
-                    "base_agent.j2",
+                    "single_task_agent.j2",
                 ),
                 model=root_ai_model
             )

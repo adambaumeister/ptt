@@ -7,14 +7,14 @@ def test_function_to_tool_call():
     """Test the next_agent functionality works"""
     agent = Agent(
         agent_name="root",
-        convo_loader=JinjaConvoLoader("base_agent.j2"),
+        convo_loader=JinjaConvoLoader("single_task_agent.j2"),
         model=None
     )
 
     agent.add_agent(
         Agent(
             agent_name="sub_agent",
-            convo_loader=JinjaConvoLoader("base_agent.j2"),
+            convo_loader=JinjaConvoLoader("single_task_agent.j2"),
             model=None
         )
     )
@@ -25,7 +25,7 @@ def test_class_to_tool_calls():
     """Test that an object can be converted to tool calls"""
     agent = Agent(
         agent_name="root",
-        convo_loader=JinjaConvoLoader("base_agent.j2"),
+        convo_loader=JinjaConvoLoader("single_task_agent.j2"),
         model=None
     )
     class ExampleClass:
