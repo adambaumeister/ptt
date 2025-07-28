@@ -81,6 +81,7 @@ class TaskFlowBehavior:
         Examples:
             >>> from python_to_tools.ptt import TaskFlowBehavior
             >>> behavior = TaskFlowBehavior(root_ai_model=model)
+            >>> behavior.resolve_from_text("Get the weather in Sydney, Australia")
         """
         self.root_ai_model = root_ai_model
 

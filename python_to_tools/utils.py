@@ -14,7 +14,7 @@ from python_to_tools.ai.generic_models import Message, TextGenerationRequest
 logger = logging.getLogger(__name__)
 """Root logger"""
 
-logging.basicConfig(format="[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s")
+logging.basicConfig(format="[%(filename)s:%(lineno)s - %(funcName)20s() - %(levelname)s] %(message)s")
 """Set the default logging format"""
 
 logger.setLevel(logging.DEBUG)

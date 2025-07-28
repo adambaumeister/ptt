@@ -9,10 +9,10 @@ both the requests and responses to the right agents.
 From a code perspective, the Behavior object is also the interface for the user to actually define the agentic behavior
 (hence the name).
 
-**Behaivor** objects are responsible for managing the context as agents generate responses or execute functions.
+**Behaivor** objects are responsible for managing the [Context](context.md) as agents generate responses or 
+execute functions.
 
-## Defining behavior objects
-
+## Creating a Behavior
 Each type of Behavior will have its own implementation details. The most basic type of Behavior is the 
 "TaskFlowBehavior" type.
 
