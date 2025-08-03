@@ -33,6 +33,9 @@ agent = Agent(
 To assign [Functions](functions.md), it's generally as simple as adding them as tools. 
 
 ```python title="Assigning functions to the agent"
+def get_weather():
+    pass
+
 agent.add_tool(get_weather)
 ```
 

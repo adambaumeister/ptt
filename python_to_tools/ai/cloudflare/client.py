@@ -106,6 +106,7 @@ class CloudflareClient(AiModelClient):
         result = self._read_response(
             self._post(self._get_url(), data=request.model_dump()), CloudflareTextGenerationResponse
         )
+        logger.debug(request)
         logger.debug(result)
         if not result.success:
             logger.info(f"Failed to generate response to {request.messages}")

@@ -53,7 +53,7 @@ class ConvoParser:
         self.messages: list[dict] = []
 
     def handle_message(self, i: int, lines: list[str]):
-        role_regex = r'\[([a-zA-Z]+)\]'
+        role_regex = r'\[([a-zA-Z\.]+)\]'
         role = re.search(role_regex, lines[i]).group(1)
         buffer = ""
         if not role:
@@ -64,7 +64,7 @@ class ConvoParser:
             if re.match(role_regex, line):
                 self.messages.append({
                     "role": role,
-                    "content": buffer
+                    "content": buffer.strip()
                 })
                 # In this case, the top level handler should parse the current line
                 return i - 1

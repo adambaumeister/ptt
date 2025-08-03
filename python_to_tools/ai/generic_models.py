@@ -7,8 +7,7 @@ from pydantic import BaseModel, Field, AliasChoices, field_validator
 
 
 class ToolParameter(BaseModel):
-    """
-    Represents a parameter definition for a tool.
+    """Represents a parameter definition for a tool.
 
     Attributes:
         type: The data type of the parameter (e.g., 'string', 'number')
@@ -19,8 +18,7 @@ class ToolParameter(BaseModel):
 
 
 class ToolParameters(BaseModel):
-    """
-    Represents the parameters schema for a tool.
+    """Represents the parameters schema for a tool.
 
     Attributes:
         type: The schema type (typically 'object')
@@ -47,6 +45,8 @@ class Tool(BaseModel):
 
     @classmethod
     def from_func(cls, func: Callable):
+        """Creates a callable Tool from a given python function.
+        """
         description = func.__doc__
         if not description:
             raise ValueError("Tool must have a description, did you add a docstring to your function?")
@@ -71,6 +71,9 @@ class MessageRoleEnum(str, Enum):
     user = "user"
     system = "system"
     assistant = "assistant"
+
+    def __str__(self):
+        return self.value
 
 class Message(BaseModel):
     """

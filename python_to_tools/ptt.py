@@ -171,9 +171,9 @@ class TaskFlowBehavior:
                     self._task_results_to_text(task, result), role=MessageRoleEnum.assistant
                 )
                 logger.debug(result)
-                review_result = self.review_agent.resolve_from_text(result)
+                review_result = self.review_agent.resolve_from_text(result, context=self.context)
                 if "YES" not in review_result:
-                    logger.warning(f"Could not resolve task: {task}. {result}")
+                    logger.warning(f"Flow cannot continue: {review_result}")
                     success = False
 
 

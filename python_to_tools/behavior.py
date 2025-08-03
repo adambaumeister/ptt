@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 from typing import Callable, Any
 
 from click.testing import Result
@@ -43,6 +44,7 @@ class Agent:
             description: str = "",
             max_recursion=2,
             tool_call_response_template: Template = None,
+            tool_call_error_response_template: Template = None,
     ):
         """
         Create an `Agent` for servicing requests.
@@ -65,10 +67,17 @@ class Agent:
         self.agents = {}
         self.description = description
         self.max_recursion = max_recursion
+
         self.tool_call_response_template = tool_call_response_template
         if not self.tool_call_response_template:
             self.tool_call_response_template = DEFAULT_TEMPLATE_ENVIRONMENT.get_template(
                 "default_tool_call_response.j2"
+            )
+
+        self.tool_call_error_response_template = tool_call_error_response_template
+        if not self.tool_call_error_response_template:
+            self.tool_call_error_response_template = DEFAULT_TEMPLATE_ENVIRONMENT.get_template(
+                "default_tool_call_error_response.j2"
             )
 
     def add_tools_from_object(self, obj: Any):
@@ -121,6 +130,13 @@ class Agent:
 
         return agent
 
+    def _format_error_response(self, exception: str) -> str:
+        """Formats any exception raised by a tool call so AI can process and understand it
+
+        Currently, this just means just returning the entire thing as a string.
+        """
+        return self.tool_call_error_response_template.render(exception=exception)
+
     def call_tool_from_tool_response(self, tool_call: ToolCallResponse):
         """Executes the given tool, with the given arguments, based on a tool call response object from AI"""
 
@@ -131,8 +147,9 @@ class Agent:
         arguments = tool_call.arguments
         try:
             return tool(**arguments)
-        except TypeError as e:
-            raise ToolCallGotInvalidArguments(f"Tool call {tool_call.name} has invalid arguments: {arguments}") from e
+        except Exception:
+            # Catch all other errors
+            return self._format_error_response(traceback.format_exc())
 
     def add_agent(self, agent: "Agent"):
         """Add another agent to the agent tree at this node."""
