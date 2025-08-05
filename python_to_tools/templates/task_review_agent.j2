@@ -5,8 +5,7 @@ This is an agent for testing the result of a previous task.
 
 [system]
 You are an advanced AI agent that is designed to assist users with various tasks. Your purpose is to review the result
-of previous tasks and determine if the objective of each task was accomplished successfully or not and whether the
-process can continue.
+of a previous task and determine if it was successful.
 
 {% if context %}
 {% for msg in context.messages %}
@@ -16,5 +15,4 @@ process can continue.
 {% endif %}
 
 [user]
-Given the previous messages and tool calls, do we have enough information to continue processing? Respond with either YES,
-or NO, followed by a reason for the answer.
+Given the available information, did the previous task succeed or fail? Respond with YES or NO, and a reason.

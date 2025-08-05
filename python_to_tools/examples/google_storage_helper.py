@@ -42,6 +42,7 @@ class GoogleStorageWrapper:
     ):
         """Upload a given file to google cloud storage, to the given bucket."""
         file = pathlib.Path(file)
+        print(f"Uploading {file} to Google Cloud Storage")
         if not file.is_file():
             raise FileNotFoundError(f"File {file} not found")
 
@@ -69,7 +70,9 @@ def main():
     behavior.handler_agent.add_tool(storage.auth_to_gcloud)
 
     print(
-        behavior.resolve_from_text("Upload the file example_file.txt to google cloud using the bucket 'bowyridesblog' thanks")
+        behavior.resolve_from_text(
+            "Upload the file example_file.txt to google cloud, using any bucket that is available"
+        ).summary
     )
 
 if __name__ == '__main__':
