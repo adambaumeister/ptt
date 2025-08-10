@@ -9,7 +9,7 @@ both the requests and responses to the right agents.
 From a code perspective, the Behavior object is also the interface for the user to actually define the agentic behavior
 (hence the name).
 
-**Behaivor** objects are responsible for managing the [Context](context.md) as agents generate responses or 
+**Behavior** objects are responsible for managing the [Context](context.md) as agents generate responses or 
 execute functions.
 
 ## Creating a Behavior

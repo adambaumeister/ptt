@@ -63,7 +63,7 @@ class TaskFlowBehavior:
         After each response, the **review_agent** will review the resutl and determine if it was a success. If so,
         it will continue, otherwise it will stop processing further tasks.
 
-        Regardless of success or failure, all of the tasks and their results will ultimately be summarized for the
+        Regardless of success or failure, all the tasks and their results will ultimately be summarized for the
         user along with whether the original request was solved.
 
         Arguments:

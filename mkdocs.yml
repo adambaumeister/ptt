@@ -21,6 +21,7 @@ nav:
   - Python-To-Tools: index.md
   - Examples:
       - Task-Based Example (my_weather): examples/my_weather.md
+      - Real World Example (Google Cloud Storage): examples/google_storage_helper.md
   - Learn:
       - Agents: learn/agents.md
       - Behavior: learn/behavior.md
