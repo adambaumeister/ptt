@@ -22,6 +22,7 @@ nav:
   - Examples:
       - Task-Based Example (my_weather): examples/my_weather.md
       - Real World Example (Google Cloud Storage): examples/google_storage_helper.md
+      - Real World Example (Google Cloud Storage): examples/interactive_with_user_call_function.md
   - Learn:
       - Agents: learn/agents.md
       - Behavior: learn/behavior.md
