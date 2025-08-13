@@ -33,3 +33,11 @@ class AiModelClient:
     ):
         """Generic HTTP Post method."""
         return self._get_session().post(url, json=data)
+
+    def _post_data(
+            self,
+            url: str,
+            data: bytes
+    ):
+        """Generic HTTP Post method."""
+        return self._get_session().post(url, data=data)

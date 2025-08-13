@@ -15,3 +15,9 @@ def env_vars():
 def acceptance_test_results():
     fp = pathlib.Path(__file__).parent.parent.parent.parent.joinpath("docs").joinpath("acceptance.md")
     return open(fp, "w")
+
+
+@pytest.fixture
+def image():
+    fp = pathlib.Path(__file__).parent.joinpath("test_data").joinpath("cat.jpg")
+    return fp

@@ -114,3 +114,12 @@ class TextGenerationRequest(BaseModel):
     """
     messages: Optional[list[Message]] = Field(default=None, description="List of conversation messages")
     tools: Optional[list[Tool]] = Field(default=None, description="List of available tools")
+
+
+class ImageClassificationRequest(BaseModel):
+    """
+    Represents a generic image classification request
+    Attributes:
+        data: The image data, as bytes
+    """
+    data: bytes
