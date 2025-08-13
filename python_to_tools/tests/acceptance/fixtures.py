@@ -19,5 +19,5 @@ def acceptance_test_results():
 
 @pytest.fixture
 def image():
-    fp = pathlib.Path(__file__).parent.joinpath("test_data").joinpath("cat.jpg")
+    fp = pathlib.Path(__file__).parent.joinpath("test_data").joinpath("night_sky.jpg")
     return fp

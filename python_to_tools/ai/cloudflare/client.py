@@ -47,6 +47,12 @@ class CloudflareImageClassificationResponse(BaseModel):
     """Cloudflare specific image classification response"""
     result: list[CloudflareImageClassificationResponseItem]
 
+class CloudflareImageToTextResponseResult(BaseModel):
+    description: str
+
+class CloudflareImageToTextResponse(BaseModel):
+    """Cloudflare specific image classification response"""
+    result: CloudflareImageToTextResponseResult
 
 class CloudflareRequest(BaseModel):
     """
@@ -131,13 +137,26 @@ class CloudflareClient(AiModelClient):
             )
         return result.to_text_generation_response()
 
+    @staticmethod
+    def _bytes_to_uint_8_list(b: bytes) -> list[int]:
+        return list(np.frombuffer(b, dtype=np.uint8))
+
     def get_image_classification(self, request: ImageClassificationRequest) -> CloudflareImageClassificationResponse:
         """Generate an image classification based on the given image from the request."""
-        encoded_data = np.frombuffer(request.data, dtype=np.uint8)
+        encoded_data = self._bytes_to_uint_8_list(request.data)
 
         result = self._read_response(
             self._post(self._get_url(), data=CloudflareImageClassificationRequest(
-                image=list(encoded_data),
+                image=encoded_data,
             ).model_dump()), CloudflareImageClassificationResponse
+        )
+        return result
+
+    def get_image_to_text(self, request: ImageClassificationRequest):
+        encoded_data = self._bytes_to_uint_8_list(request.data)
+        result = self._read_response(
+            self._post(self._get_url(), data=CloudflareImageClassificationRequest(
+                image=encoded_data,
+            ).model_dump()), CloudflareImageToTextResponse
         )
         return result

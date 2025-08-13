@@ -29,6 +29,19 @@ def cloudflare_image_classification_fixture(env_vars):
         model_id="@cf/microsoft/resnet-50"
     )
 
+@pytest.fixture()
+def cloudflare_image_to_text(env_vars):
+    """Client fixture for cloudflare, skips tests if AI token isn't defined"""
+    if not env_vars.CLOUDFLARE_API_TOKEN:
+        pytest.skip("Cloudflare is not configured")
+
+    return CloudflareClient(
+        api_token=env_vars.CLOUDFLARE_API_TOKEN,
+        account_id=env_vars.CLOUDFLARE_ACCOUNT_ID,
+        model_id="@cf/llava-hf/llava-1.5-7b-hf"
+    )
+
+
 def test_cloudflare_get_response(cloudflare_text_generation_client_fixture):
     """Tests connectivity to the cloudflare API platform and pydantic field validation"""
     from python_to_tools.ai.cloudflare.client import CloudflareRequest, Message
@@ -87,6 +100,15 @@ def test_cloudflare_execute_tool(cloudflare_text_generation_client_fixture):
 def test_image_classification(image, cloudflare_image_classification_fixture):
     b = open(image, "rb").read()
     result = cloudflare_image_classification_fixture.get_image_classification(
+        ImageClassificationRequest(
+            data=b
+        )
+    )
+    assert result
+
+def test_image_to_text(image, cloudflare_image_to_text):
+    b = open(image, "rb").read()
+    result = cloudflare_image_to_text.get_image_to_text(
         ImageClassificationRequest(
             data=b
         )
