@@ -8,6 +8,8 @@ Agents can be passed *Tools* (functions) to execute, and other agents to pass re
 build a complex tree of agents that are all very good at doing specific things, and also have their own peers to 
 forward tasks to when required.
 
+Agents load their prompts for behavior using a custom loader 
+
 It is important to note that **Agents** do not store their own context. This is the job of their parent 
 [Behavior](behavior.md) object.
 

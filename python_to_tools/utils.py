@@ -110,7 +110,7 @@ class ConvoParser:
 
 class ConvoLoader(abc.ABC):
     @abc.abstractmethod
-    def to_convo(self, **kwargs):
+    def to_convo(self, **kwargs) -> Convo:
         """Convert the given loader to a `Convo` object"""
         pass
 
