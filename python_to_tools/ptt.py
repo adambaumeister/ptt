@@ -1,9 +1,10 @@
 import json
+from typing import Annotated
 
 from pydantic import BaseModel
 
 from python_to_tools.ai.base import AiModelClient
-from python_to_tools.ai.generic_models import MessageRoleEnum
+from python_to_tools.ai.generic_models import MessageRoleEnum, ToolParameter
 from python_to_tools.behavior import Agent
 from python_to_tools.context import Context, MemoryContext
 from python_to_tools.utils import logger, JinjaConvoLoader
@@ -180,3 +181,31 @@ class TaskFlowBehavior:
         summary = self.summary_agent.resolve_from_text(msg, context=self.context)
 
         return TaskFlowResult(summary=summary, task_output=task_results, success=success)
+
+def yolo_dont_do_this_omg(script: Annotated[str, ToolParameter(type="string", description="Directory to look for files")]):
+    """Arbitarily execute Python code in a local interpretor. This uses python 3.11 and has access to bash commands,
+    etc"""
+    print(f"Jesus christ we would have just executed: {script  }")
+
+class YoloBehavior:
+
+    def __init__(
+            self,
+            root_ai_model: AiModelClient,
+
+    ):
+        self.root_agent = Agent(
+            agent_name="yolo_agent",
+            convo_loader=JinjaConvoLoader(
+                "yolo.j2",
+            ),
+            model=root_ai_model
+        )
+        self.root_agent.add_tool(yolo_dont_do_this_omg)
+
+
+    def resolve_from_text(self, msg: str):
+        """Resolve the given text into, first, a list of tasks, then close each task one by one using our associated
+        handler agents."""
+        result = self.root_agent.resolve_from_text(msg)
+        return result

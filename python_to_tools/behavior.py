@@ -234,4 +234,3 @@ class Agent:
             return self._response_to_str(call_results)
 
         return result.content
-

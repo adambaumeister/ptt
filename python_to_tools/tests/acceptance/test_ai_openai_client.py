@@ -36,8 +36,9 @@ def test_get_response(openai_client_fixture):
             role=MessageRoleEnum.system,
         ),
         Message(
-            content="Hello!",
+            content="Hello, who are you?",
             role=MessageRoleEnum.user,
         )
     ]
-    openai_client_fixture.get_response(TextGenerationRequest(messages=messages))
+    response = openai_client_fixture.get_response(TextGenerationRequest(messages=messages))
+    assert "Google" in response.content
