@@ -1,5 +1,6 @@
 import json
 import logging
+import pathlib
 import traceback
 from typing import Callable, Any
 
@@ -12,7 +13,7 @@ from python_to_tools.ai.generic_models import Tool, ToolParameter, TextGeneratio
 from typing import Annotated
 
 from python_to_tools.context import Context
-from python_to_tools.utils import ConvoLoader, DEFAULT_TEMPLATE_ENVIRONMENT
+from python_to_tools.utils import ConvoLoader, DEFAULT_TEMPLATE_ENVIRONMENT, JinjaConvoLoader
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,18 @@ class Agent:
             self.tool_call_error_response_template = DEFAULT_TEMPLATE_ENVIRONMENT.get_template(
                 "default_tool_call_error_response.j2"
             )
+
+    @classmethod
+    def from_convo_file(
+            cls,
+            agent_name: str,
+            convo_file_path: pathlib.Path | str,
+            model: AiModelClient,
+            **cls_kwargs
+    ) -> "Agent":
+        """Helper method; makes it easier to load agents directly from a convo file path"""
+        loader = JinjaConvoLoader(template_path=convo_file_path)
+        return cls(agent_name, loader, model, **cls_kwargs)
 
     def add_tools_from_object(self, obj: Any):
         """Adds all of the class object methods from the given object as tools attached to this agent.

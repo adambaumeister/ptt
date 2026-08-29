@@ -8,7 +8,7 @@ Agents can be passed *Tools* (functions) to execute, and other agents to pass re
 build a complex tree of agents that are all very good at doing specific things, and also have their own peers to 
 forward tasks to when required.
 
-Agents load their prompts for behavior using a custom loader 
+Agents load their prompts for behavior using a custom [Convo](convos.md) loader. 
 
 It is important to note that **Agents** do not store their own context. This is the job of their parent 
 [Behavior](behavior.md) object.
@@ -27,6 +27,20 @@ agent = Agent(
         "single_task_agent.j2",
     ),
     model=model
+)
+```
+
+You can also create agents by pointing directly at a single Convo file.
+
+```python title="Creating an Agent From a Single FIle"
+from python_to_tools.behavior import Agent
+from python_to_tools.ai.utils import get_model_by_environment_variables
+model = get_model_by_environment_variables()
+
+agent = Agent.from_convo_file(
+        convo_file_path="custom_summary_return_json.j2",
+        model=model,
+        agent_name="handler_agent",
 )
 ```
 

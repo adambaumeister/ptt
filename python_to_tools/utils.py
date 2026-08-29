@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 import logging
-from jinja2 import Environment, PackageLoader
+from jinja2 import Environment, PackageLoader, Template
 
 from python_to_tools.ai.generic_models import Message, TextGenerationRequest
 
@@ -121,8 +121,9 @@ class JinjaConvoLoader(ConvoLoader):
     """
     def __init__(
             self,
-            template_name: str,
-            environment: Environment = None,
+            template_name: str | None = None,
+            environment: Environment | None = None,
+            template_path: str = None,
     ):
         """
         Create a Jinja2 Convo loader. If an environment is not provided, we will use the default templates shipped
@@ -135,6 +136,7 @@ class JinjaConvoLoader(ConvoLoader):
         self.environment = environment
         if not self.environment:
             self.environment = DEFAULT_TEMPLATE_ENVIRONMENT
+        self.template_path = template_path
         self.template_name = template_name
 
     def to_convo(self, **kwargs):
@@ -142,7 +144,14 @@ class JinjaConvoLoader(ConvoLoader):
 
     def prompt_template_to_convo(self, **kwargs) -> Convo:
         """Convenience function, allows us to store prompt templates as simple files"""
-        template = self.environment.get_template(self.template_name)
+        if self.template_name:
+            template = self.environment.get_template(self.template_name)
+        elif pathlib.Path(self.template_path).is_file():
+            with open(self.template_path) as template_file:
+                template = Template(template_file.read())
+        else:
+            raise EnvironmentError(f"No valid j2 template was found.")
+
         rendered_prompt_template = template.render(**kwargs)
         parser = ConvoParser()
         return parser.parse_convo_file(rendered_prompt_template)

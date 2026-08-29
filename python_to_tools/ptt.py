@@ -1,10 +1,9 @@
 import json
-from typing import Annotated
 
 from pydantic import BaseModel
 
 from python_to_tools.ai.base import AiModelClient
-from python_to_tools.ai.generic_models import MessageRoleEnum, ToolParameter
+from python_to_tools.ai.generic_models import MessageRoleEnum
 from python_to_tools.behavior import Agent
 from python_to_tools.context import Context, MemoryContext
 from python_to_tools.utils import logger, JinjaConvoLoader
