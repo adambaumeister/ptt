@@ -207,7 +207,7 @@ class Agent:
             request=request,
         )
 
-    def resolve_from_text(
+    def  resolve_from_text(
             self, text: str,
             context: Context = None,
             depth=0

@@ -11,7 +11,7 @@
 pip install python-to-tools
 ```
 
-Check out [this simple example](python_to_tools/examples/my_weather.py) to get started!
+Check out [this simple example](examples/my_weather.py) to get started!
 
 ## Overview
 

@@ -20,6 +20,10 @@ class TaskList(BaseModel):
         text = text.rstrip("```")
         return cls(**json.loads(text))
 
+    def debug(self):
+        logger.debug(f"Tasklist reasoning \n{self.reasoning}")
+        logger.debug(f"Tasklist items:\n{'\n  '.join(self.list)}")
+
 
 class TaskFlowResult(BaseModel):
     summary: str
@@ -61,7 +65,7 @@ class TaskFlowBehavior:
         Each task within the task list is then passed, in sequence, to teh **handler_agent**. The **handler_agent**
         will solve the task, returning the result, or pass it to it's own sub agents.
 
-        After each response, the **review_agent** will review the resutl and determine if it was a success. If so,
+        After each response, the **review_agent** will review the result and determine if it was a success. If so,
         it will continue, otherwise it will stop processing further tasks.
 
         Regardless of success or failure, all the tasks and their results will ultimately be summarized for the
@@ -162,6 +166,7 @@ class TaskFlowBehavior:
         logger.info("Resolving message into task list")
         task_list = TaskList.from_str(self.root_agent.generate_text(msg).content)
         task_results = {}
+        task_list.debug()
 
         success = True
         for task in task_list.list:
@@ -182,30 +187,3 @@ class TaskFlowBehavior:
 
         return TaskFlowResult(summary=summary, task_output=task_results, success=success)
 
-def yolo_dont_do_this_omg(script: Annotated[str, ToolParameter(type="string", description="Directory to look for files")]):
-    """Arbitarily execute Python code in a local interpretor. This uses python 3.11 and has access to bash commands,
-    etc"""
-    print(f"Jesus christ we would have just executed: {script  }")
-
-class YoloBehavior:
-
-    def __init__(
-            self,
-            root_ai_model: AiModelClient,
-
-    ):
-        self.root_agent = Agent(
-            agent_name="yolo_agent",
-            convo_loader=JinjaConvoLoader(
-                "yolo.j2",
-            ),
-            model=root_ai_model
-        )
-        self.root_agent.add_tool(yolo_dont_do_this_omg)
-
-
-    def resolve_from_text(self, msg: str):
-        """Resolve the given text into, first, a list of tasks, then close each task one by one using our associated
-        handler agents."""
-        result = self.root_agent.resolve_from_text(msg)
-        return result
