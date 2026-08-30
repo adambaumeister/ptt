@@ -28,8 +28,7 @@ With PTT, you write Python code, then attach it to AI "Agents". Then you ask tho
  Google     | google/gemini-2.5-flash                  | ✅                         | ✅                           | 
 
 
-
 ## Philosophy
 
-The philosophy of this project is to enable developers to enhance their apps with Agentic AI without requiring a lot of
-major code changes or to fully commit to writing a full MCP host.
+The philosophy of this project is to enable developers to enhance their apps with Agentic AI behavior while emphasizing
+a "code-first" paradigm.

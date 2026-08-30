@@ -7,7 +7,7 @@ from python_to_tools.tests.acceptance.fixtures import acceptance_test_results
 
 from python_to_tools.ai.generic_models import ToolParameter
 from python_to_tools.behavior import Agent
-from python_to_tools.ptt import TaskFlowBehavior
+from python_to_tools.ptt import TaskFlowBehavior, RunningThoughtBehavior
 from python_to_tools.tests.acceptance.test_ai_cloudflare_client import (
     cloudflare_text_generation_client_fixture, env_vars
 )
@@ -173,3 +173,17 @@ def test_get_the_weather_sub_agents_google(
     behavior.add_task_handler_agent(general_agent)
     result = behavior.resolve_from_text("get me the weather in my current location")
     acceptance_test_results.write(f"## Google AI - test_get_the_weather_google_sub_agents - {openai_client_fixture.model} - Get the Weather with proxy to another agent\n{result.summary}\n")
+
+def test_running_thought(
+        openai_client_fixture,
+        acceptance_test_results
+):
+    """Same, basic agentic functionality but using Google vertex via the OpenAI interface"""
+    from python_to_tools.ptt import RunningThoughtBehavior, Agent
+    behavior = RunningThoughtBehavior(root_ai_model=openai_client_fixture)
+
+    weather_agent = get_weather_agent(openai_client_fixture)
+
+    result = behavior.resolve_from_text("get me the weather in my current location")
+    print(result)
+    #acceptance_test_results.write(f"## Google AI - test_get_the_weather_google - Get the Weather\n{result.summary}\n")

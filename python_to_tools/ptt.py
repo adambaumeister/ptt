@@ -23,6 +23,18 @@ class TaskList(BaseModel):
         logger.debug(f"Tasklist reasoning \n{self.reasoning}")
         logger.debug(f"Tasklist items:\n{'\n  '.join(self.list)}")
 
+class BehaviorBase:
+    def _task_results_to_text(self, name: str, result: str):
+        """Converts completed tasks into a textual representation.
+
+        Within this style of Behavior handler, this step is very important as it's how AI ultimately works out
+        how it did at handling the user's actual query
+        """
+        if result:
+            return f"Task result:\nTask name: {name}. Result: \n{result.rstrip()}"
+
+        return None
+
 
 class TaskFlowResult(BaseModel):
     summary: str
@@ -30,7 +42,7 @@ class TaskFlowResult(BaseModel):
     task_output: dict[str, str]
 
 
-class TaskFlowBehavior:
+class TaskFlowBehavior(BehaviorBase):
     """
     This is a TaskFlow implementation of agentic behavior.
 
@@ -148,17 +160,6 @@ class TaskFlowBehavior:
         """Adds a handler agent to this behavior object. Note that agents all function as a tree!"""
         self.handler_agent = agent
 
-    def _task_results_to_text(self, name: str, result: str):
-        """Converts completed tasks into a textual representation.
-
-        Within this style of Behavior handler, this step is very important as it's how AI ultimately works out
-        how it did at handling the user's actual query
-        """
-        if result:
-            return f"Task result:\nTask name: {name}. Result: \n{result.rstrip()}"
-
-        return None
-
     def resolve_from_text(self, msg: str):
         """Resolve the given text into, first, a list of tasks, then close each task one by one using our associated
         handler agents."""
@@ -186,3 +187,97 @@ class TaskFlowBehavior:
 
         return TaskFlowResult(summary=summary, task_output=task_results, success=success)
 
+
+class Thought(BaseModel):
+    next_task: str
+    reasoning: str
+    finished: bool = False
+
+    @classmethod
+    def from_str(cls, text: str):
+        text = text.lstrip("```json")
+        text = text.rstrip("```")
+        return cls(**json.loads(text))
+
+class ThoughtResult(BaseModel):
+    summary: str
+
+class RunningThoughtBehavior(BehaviorBase):
+    """
+    This is a behavior flow though uses the concept of 'running thought'
+
+    Instead of a task list that gets resolved, this uses a single mutable 'thought' that changes based on the result
+    of the last task.
+    """
+    def __init__(
+            self,
+            root_ai_model: AiModelClient,
+            root_agent: Agent = None,
+            handler_agent: Agent = None,
+            summary_agent: Agent = None,
+            context: Context = None,
+            max_thinking: int = 5
+    ):
+        self.max_thinking = max_thinking
+        self.root_agent = root_agent
+        if not self.root_agent:
+            self.root_agent = Agent(
+                agent_name="root",
+                convo_loader=JinjaConvoLoader(
+                    "thinking_agent.j2",
+                ),
+                model=root_ai_model
+            )
+
+        self.handler_agent = handler_agent
+        if not self.handler_agent:
+            self.handler_agent = Agent(
+                agent_name="default_handler_agent",
+                convo_loader=JinjaConvoLoader(
+                    "single_task_agent.j2",
+                ),
+                model=root_ai_model
+            )
+
+        self.summary_agent = summary_agent
+        if not self.summary_agent:
+            self.summary_agent = Agent(
+                agent_name="summary",
+                convo_loader=JinjaConvoLoader(
+                    "root_summary.j2",
+                ),
+                model=root_ai_model
+            )
+
+        self.context = context
+        if not self.context:
+            self.context = MemoryContext()
+
+    def resolve_from_text(self, msg: str):
+        """Resolve the given text into, first, a thought and then the next task we need to accomplish."""
+        logger.info("Resolving message into Thought")
+        thought = Thought.from_str(self.root_agent.generate_text(msg).content)
+        logger.info(thought.model_dump_json())
+
+        review_result = None
+
+        i = 0
+        while not thought.finished and i < self.max_thinking:
+            task_result = self.handler_agent.resolve_from_text(thought.next_task)
+            logger.debug(f"{i}/{self.max_thinking} task_result: {task_result}")
+            self.context.add_message(
+                self._task_results_to_text(thought.next_task, task_result), role=MessageRoleEnum.assistant
+            )
+            review_result = self.root_agent.generate_text(task_result)
+            logger.debug(f"{i}/{self.max_thinking} review result: {review_result.content}")
+            thought = Thought.from_str(review_result.content)
+            self.context.add_message(
+                content=f"Reviewed the previous task output with result: {review_result.content}"
+            )
+            i += 1
+
+        if review_result:
+            summary = self.summary_agent.resolve_from_text(review_result.content, context=self.context)
+            return ThoughtResult(summary=summary)
+
+        raise ValueError("Failed to resolve task.")
