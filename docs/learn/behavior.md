@@ -35,3 +35,25 @@ graph LR;
     options:
         toc_label: "Task Flow Behavior"
         show_root_toc_entry: false
+
+
+### RunningThoughtBehavior
+
+`RunningThoughtBehavior` implements a mutable `Thought` object that changes based on the result of the previous task.
+
+This type of handling is more useful than the task list style behavior when the tasks are less clearly defined or when
+there are multiple possible paths to resolution. Ultimately this makes this flow more powerful at solving problems but
+it comes at a cost of more recursion (and thus more token cost) and the flow itself is less robust and controllable. 
+
+```mermaid
+graph LR;
+    b((RunningThoughtBehavior))-->RootAgent-->NextTask;
+    NextTask-->Agent1([Handler Agent]);
+    Agent1([Handler Agent])-->TaskResult;
+    TaskResult-->Agent2([Review Agent]);
+```
+
+::: python_to_tools.ptt.RunningThoughtBehavior.__init__
+    options:
+        toc_label: "Task Flow Behavior"
+        show_root_toc_entry: false

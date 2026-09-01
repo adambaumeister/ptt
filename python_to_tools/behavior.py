@@ -202,7 +202,7 @@ class Agent:
         """
         convo = self.convo_loader.to_convo(last_input=text, context=context)
         request = convo.as_text_generation_request()
-        print(json.dumps(request.model_dump(), indent=2))
+        #print(json.dumps(request.model_dump(), indent=2))
         tools = []
         if self.agents:
             agent_tool = Tool.from_func(self.next_agent)

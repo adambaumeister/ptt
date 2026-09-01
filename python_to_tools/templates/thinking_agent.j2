@@ -21,13 +21,19 @@ You are an advanced AI agent that is designed to assist users with various tasks
 {% endif %}
 
 [user]
-Evaluate the following user message, and the message history (if any), determining what you have to do to accomplish the task or answer the question.
+Evaluate the following user message, and the message history and associated tool calls, determining what you have to do to accomplish the task or answer the question.
 
+The task may already be completed.
+
+Your response should be in the json format as below:
+
+```json
 {
     "next_task": "The next task i need to accomplish",
     "reasoning": "Why I need to do all these things",
     "finished": "boolean true/false if you're finished already or not"
 }
+```
 
 
 User message: {{ last_input }}

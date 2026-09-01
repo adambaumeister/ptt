@@ -153,6 +153,7 @@ class JinjaConvoLoader(ConvoLoader):
             raise EnvironmentError(f"No valid j2 template was found.")
 
         rendered_prompt_template = template.render(**kwargs)
+        #logger.debug(rendered_prompt_template)
         parser = ConvoParser()
         return parser.parse_convo_file(rendered_prompt_template)
 

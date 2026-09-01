@@ -23,6 +23,7 @@ class TaskList(BaseModel):
         logger.debug(f"Tasklist reasoning \n{self.reasoning}")
         logger.debug(f"Tasklist items:\n{'\n  '.join(self.list)}")
 
+
 class BehaviorBase:
     def _task_results_to_text(self, name: str, result: str):
         """Converts completed tasks into a textual representation.
@@ -182,7 +183,6 @@ class TaskFlowBehavior(BehaviorBase):
                     logger.warning(f"Flow cannot continue: {review_result}")
                     success = False
 
-
         summary = self.summary_agent.resolve_from_text(msg, context=self.context)
 
         return TaskFlowResult(summary=summary, task_output=task_results, success=success)
@@ -199,8 +199,6 @@ class Thought(BaseModel):
         text = text.rstrip("```")
         return cls(**json.loads(text))
 
-class ThoughtResult(BaseModel):
-    summary: str
 
 class RunningThoughtBehavior(BehaviorBase):
     """
@@ -208,16 +206,55 @@ class RunningThoughtBehavior(BehaviorBase):
 
     Instead of a task list that gets resolved, this uses a single mutable 'thought' that changes based on the result
     of the last task.
+
+    Unlike a task list, there is no hard bounding for this behavior, and it will continue until it thinks its completed
+    the task or it hits `max_thinking`.
     """
+
     def __init__(
             self,
             root_ai_model: AiModelClient,
             root_agent: Agent = None,
             handler_agent: Agent = None,
-            summary_agent: Agent = None,
+            review_agent: Agent = None,
             context: Context = None,
-            max_thinking: int = 5
+            max_thinking: int = 10
     ):
+        """This behavior first takes the input into a `Thought`..
+
+        The **root_agent** MUST return a JSON str in the format;
+
+        ```json
+        {
+            "next_task": "The next task i need to accomplish",
+            "reasoning": "Why I need to do all these things",
+            "finished": "boolean true/false if you're finished already or not"
+        }
+        ```
+
+        The next_task is then passed to a handler agent for resolution.
+
+        After the agent returns the result, the review agent reviews the result and determines the next step by
+        formulating it into another `Thought`.
+
+        Arguments:
+            root_ai_model: Instance of any class that implements `AiModelClient`,
+            root_agent: Instance of any class that implements `Agent`. This agent is responsible generating the initial
+                `Thought` which defines what the next step is.
+            handler_agent: Instance of any class that implements `Agent`. The Agent is responsible for handling each
+                individual task and will contain the bulk of your logic.
+            review_agent: After each task, this agent reviews the result to determine if the process has finished
+                or if additional steps are required.
+            context: Stores, and provides access to, context for each request. The context at minimum includes the
+                thought history.
+            max_thinking: The hard recurision limit to apply for tasks. A model can only recursively prompt itself
+                this many times before it gives up.
+
+        Examples:
+            >>> from python_to_tools.ptt import TaskFlowBehavior
+            >>> behavior = TaskFlowBehavior(root_ai_model=model)
+            >>> behavior.resolve_from_text("Get the weather in Sydney, Australia")
+        """
         self.max_thinking = max_thinking
         self.root_agent = root_agent
         if not self.root_agent:
@@ -239,12 +276,12 @@ class RunningThoughtBehavior(BehaviorBase):
                 model=root_ai_model
             )
 
-        self.summary_agent = summary_agent
-        if not self.summary_agent:
-            self.summary_agent = Agent(
+        self.review_agent = review_agent
+        if not self.review_agent:
+            self.review_agent = Agent(
                 agent_name="summary",
                 convo_loader=JinjaConvoLoader(
-                    "root_summary.j2",
+                    "thinking_review_agent.j2",
                 ),
                 model=root_ai_model
             )
@@ -253,13 +290,13 @@ class RunningThoughtBehavior(BehaviorBase):
         if not self.context:
             self.context = MemoryContext()
 
-    def resolve_from_text(self, msg: str):
+    def resolve_from_text(self, msg: str) -> Thought:
         """Resolve the given text into, first, a thought and then the next task we need to accomplish."""
         logger.info("Resolving message into Thought")
         thought = Thought.from_str(self.root_agent.generate_text(msg).content)
         logger.info(thought.model_dump_json())
 
-        review_result = None
+        self.context.add_message(content=f"Original user request: {msg}", role=MessageRoleEnum.user)
 
         i = 0
         while not thought.finished and i < self.max_thinking:
@@ -268,16 +305,12 @@ class RunningThoughtBehavior(BehaviorBase):
             self.context.add_message(
                 self._task_results_to_text(thought.next_task, task_result), role=MessageRoleEnum.assistant
             )
-            review_result = self.root_agent.generate_text(task_result)
-            logger.debug(f"{i}/{self.max_thinking} review result: {review_result.content}")
-            thought = Thought.from_str(review_result.content)
-            self.context.add_message(
-                content=f"Reviewed the previous task output with result: {review_result.content}"
-            )
+            review_result = self.review_agent.resolve_from_text(task_result, context=self.context)
+            logger.debug(f"{i}/{self.max_thinking} review_result: {review_result}")
+            thought = Thought.from_str(review_result)
             i += 1
 
-        if review_result:
-            summary = self.summary_agent.resolve_from_text(review_result.content, context=self.context)
-            return ThoughtResult(summary=summary)
+        if not thought.finished:
+            raise ValueError(f"Failed to resolve task after {i} thought/actions.")
 
-        raise ValueError("Failed to resolve task.")
+        return thought
