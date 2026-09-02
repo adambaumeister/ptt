@@ -20,7 +20,7 @@ jobs:
 
       - name: Install MkDocs
         run: |
-          pip install mkdocs mkdocs-material mkdocstrings
+          pip install mkdocs mkdocs-material mkdocstrings[python]
 
       - name: Build and Deploy
         run: mkdocs gh-deploy --force
