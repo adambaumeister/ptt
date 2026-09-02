@@ -1,0 +1,39 @@
+"""
+This is a simple file format designed to be read as prompt messages.
+
+It makes it easy to write long conversations in a readable way!
+
+This top section are all comments, and won't be rendered.
+
+Metadata section MUST be at the top of the file!
+"""
+[metadata:description]
+This is the root prompt, used to start all agentic behavior
+
+[system]
+You are an advanced AI agent that is designed to assist users with various tasks.
+
+{% if context %}
+{% for msg in context.messages %}
+[{{ msg.role }}]
+{{ msg.content }}
+{% endfor %}
+{% endif %}
+
+[user]
+Evaluate the following user message, and the message history and associated tool calls, determining what you have to do to accomplish the task or answer the question.
+
+The task may already be completed.
+
+Your response should be in the json format as below:
+
+```json
+{
+    "next_task": "The next task i need to accomplish",
+    "reasoning": "Why I need to do all these things",
+    "finished": "boolean true/false if you're finished already or not"
+}
+```
+
+
+User message: {{ last_input }}

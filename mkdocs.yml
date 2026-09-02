@@ -1,0 +1,45 @@
+site_name: Python-To-Tools Documentation
+site_url: https://mydomain.org/mysite
+repo_url: https://github.com/adambaumeister/ptt
+theme:
+  name: material
+  logo: static/logo.svg
+  features:
+    - navigation.tabs
+    - navigation.tracking
+    - content.code.copy
+markdown_extensions:
+  - md_in_html
+  - attr_list
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+nav:
+  - Python-To-Tools: index.md
+  - Examples:
+      - Task-Based Example (my_weather): examples/my_weather.md
+      - Real World Example (Google Cloud Storage): examples/google_storage_helper.md
+      - Real World Example (Google Cloud Storage): examples/interactive_with_user_call_function.md
+  - Learn:
+      - Agents: learn/agents.md
+      - Behavior: learn/behavior.md
+      - Context: learn/context.md
+      - Functions and Tools: learn/functions.md
+  - Configuration:
+      - Environment Variables: configuration/envvars.md
+      - AI Models: configuration/models.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/adambaumeister/
+    - link: https://www.linkedin.com/in/adam-baumeister/
+      icon: fontawesome/brands/linkedin
+
+plugins:
+  - mkdocstrings:
+      default_handler: python

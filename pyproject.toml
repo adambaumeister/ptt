@@ -13,7 +13,19 @@ pydantic = "^2.11.7"
 requests = "^2.32.4"
 pytest = "^8.4.1"
 jinja2 = "^3.1.6"
+openai = "^1.97.0"
+numpy = "^2.3.2"
 
+
+[tool.poetry.group.examples.dependencies]
+google-cloud-storage = "^3.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+mkdocs = "^1.6.1"
+mkdocstrings = {extras = ["python"], version = "^0.29.1"}
+mkdocs-material = "^9.6.15"
+black = "^26.5.1"
 
 [build-system]
 requires = ["poetry-core"]

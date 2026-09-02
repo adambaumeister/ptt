@@ -14,12 +14,15 @@ This is the root prompt, used to start all agentic behavior
 You are an advanced AI agent that is designed to assist users with various tasks.
 
 [user]
-Evaluate the following user message, converting it into a "todo-list" of actionable tasks. Your response should be
-a properly formatted JSON object with the following structure, as an example
+Evaluate the following user message, converting it into a "todo-list" of actionable tasks for you to take.
+
+Your response should be a properly formatted JSON object with the following structure, as an example
 
 {
     "list": ["first thing to do", "second thing to do", "third thing to do"]
     "reasoning": "Why I need to do all these things
 }
+
+Keep your list as simple and to the point as possible.
 
 User message: {{ last_input }}

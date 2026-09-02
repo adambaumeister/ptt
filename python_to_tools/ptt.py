@@ -3,48 +3,148 @@ import json
 from pydantic import BaseModel
 
 from python_to_tools.ai.base import AiModelClient
+from python_to_tools.ai.generic_models import MessageRoleEnum
 from python_to_tools.behavior import Agent
-from python_to_tools.utils import logger
+from python_to_tools.context import Context, MemoryContext
+from python_to_tools.utils import logger, JinjaConvoLoader
 
 
 class TaskList(BaseModel):
     list: list[str]
     reasoning: str
 
-class AgenticBehavior:
-    """
-    The main class for implementing agentic handling of python functions.
+    @classmethod
+    def from_str(cls, text: str):
+        text = text.lstrip("```json")
+        text = text.rstrip("```")
+        return cls(**json.loads(text))
 
-    The purpose of this class is to accept any number of functions, creating both an index of tools for AI along
-    with the necessary logic structure for invoking them
+    def debug(self):
+        logger.debug(f"Tasklist reasoning \n{self.reasoning}")
+        logger.debug(f"Tasklist items:\n{'\n  '.join(self.list)}")
+
+
+class BehaviorBase:
+    def _task_results_to_text(self, name: str, result: str):
+        """Converts completed tasks into a textual representation.
+
+        Within this style of Behavior handler, this step is very important as it's how AI ultimately works out
+        how it did at handling the user's actual query
+        """
+        if result:
+            return f"Task result:\nTask name: {name}. Result: \n{result.rstrip()}"
+
+        return None
+
+
+class TaskFlowResult(BaseModel):
+    summary: str
+    success: bool
+    task_output: dict[str, str]
+
+
+class TaskFlowBehavior(BehaviorBase):
     """
+    This is a TaskFlow implementation of agentic behavior.
+
+    This flow is based on the concept of implementing a lit of tasks to handle based on an original user query,
+    then actioning it.
+
+    TaskFlow is very good at handling sync operations, such as one off user messages where the total time to
+    process will be short enough for the user to wait.
+    """
+
     def __init__(
             self,
             root_ai_model: AiModelClient,
             root_agent: Agent = None,
-            handler_agent: Agent = None
+            handler_agent: Agent = None,
+            summary_agent: Agent = None,
+            review_agent: Agent = None,
+            context: Context = None
     ):
-        """
-        Create an instance of AgenticBehavior
+        """This behavior first creates a "task list" using the root_agent.
 
-        You must provide a  Root AI model which functions as the base for the initial decision-making, including
-        the creation of the top level task list.
+        The **root_agent** MUST return a JSON str in the format;
+
+        ```json
+        {
+            tasks: [],
+            reasoning: ""
+        }
+        ```
+
+        Each task within the task list is then passed, in sequence, to teh **handler_agent**. The **handler_agent**
+        will solve the task, returning the result, or pass it to it's own sub agents.
+
+        After each response, the **review_agent** will review the result and determine if it was a success. If so,
+        it will continue, otherwise it will stop processing further tasks.
+
+        Regardless of success or failure, all the tasks and their results will ultimately be summarized for the
+        user along with whether the original request was solved.
 
         Arguments:
-            root_ai_model: Instance of any class that implements `AiModelClient`
+            root_ai_model: Instance of any class that implements `AiModelClient`,
+            root_agent: Instance of any class that implements `Agent`. This agent is responsible for creating a task
+                list.
+            handler_agent: Instance of any class that implements `Agent`. The Agent is responsible for handling each
+                individual task within the generated list, and will contain the bulk of your logic.
+            summary_agent: After the tasks have completed, this agent summarizes and finally provides the ultimate
+                response to the original question.
+            review_agent: After each task, this agent will review the result to determine if the process has been
+                successful thus far - if not, we can exit early
+            context: Stores, and provides access to, context for each request.
+
+        Examples:
+            >>> from python_to_tools.ptt import TaskFlowBehavior
+            >>> behavior = TaskFlowBehavior(root_ai_model=model)
+            >>> behavior.resolve_from_text("Get the weather in Sydney, Australia")
         """
         self.root_ai_model = root_ai_model
+
+        self.context = context
+        if not self.context:
+            self.context = MemoryContext()
 
         self.root_agent = root_agent
         if not self.root_agent:
             self.root_agent = Agent(
                 agent_name="root",
-                convo_file="root.j2",
+                convo_loader=JinjaConvoLoader(
+                    "task_master_agent.j2",
+                ),
+                model=root_ai_model
+            )
+
+        self.summary_agent = summary_agent
+        if not self.summary_agent:
+            self.summary_agent = Agent(
+                agent_name="summary",
+                convo_loader=JinjaConvoLoader(
+                    "root_summary.j2",
+                ),
                 model=root_ai_model
             )
 
         self.handler_agent = handler_agent
+        if not self.handler_agent:
+            self.handler_agent = Agent(
+                agent_name="default_handler_agent",
+                convo_loader=JinjaConvoLoader(
+                    "single_task_agent.j2",
+                ),
+                model=root_ai_model
+            )
 
+        self.review_agent = review_agent
+        if not self.review_agent:
+            self.review_agent = Agent(
+                agent_name="reviewer_agent",
+                convo_loader=JinjaConvoLoader(
+                    "task_review_agent.j2",
+                ),
+                model=root_ai_model
+            )
 
     def add_root_agent(self, agent: Agent):
         """Adds the root, top level agent for handling all other requests.
@@ -61,25 +161,156 @@ class AgenticBehavior:
         """Adds a handler agent to this behavior object. Note that agents all function as a tree!"""
         self.handler_agent = agent
 
-    def _task_results_to_text(self, task_results: dict[str, str]):
-        """Converts the
-        """
-        r = []
-        for name, result in task_results.items():
-            r.append(f"\n<task_output task_name='{name}'>\n{result}</task_output>")
-
-        return r
-
     def resolve_from_text(self, msg: str):
         """Resolve the given text into, first, a list of tasks, then close each task one by one using our associated
         handler agents."""
         logger.info("Resolving message into task list")
-        task_list = TaskList(**json.loads(self.root_agent.generate_text(msg).content))
+        task_list = TaskList.from_str(self.root_agent.generate_text(msg).content)
         task_results = {}
+        task_list.debug()
+
+        success = True
         for task in task_list.list:
-            logger.info(f"resolving task: {task}")
-            history = self._task_results_to_text(task_results)
-            logger.info(f"Adding {len(history)} history to generation step")
-            result = self.handler_agent.resolve_from_text(task, history=history)
-            task_results[task] = result
-        return task_results
+            if success:
+                logger.info(f"resolving task: {task}")
+                result = self.handler_agent.resolve_from_text(task, context=self.context)
+                self.context.add_message(
+                    self._task_results_to_text(task, result), role=MessageRoleEnum.assistant
+                )
+                logger.debug(result)
+                review_result = self.review_agent.resolve_from_text(result, context=self.context)
+                if "YES" not in review_result:
+                    logger.warning(f"Flow cannot continue: {review_result}")
+                    success = False
+
+        summary = self.summary_agent.resolve_from_text(msg, context=self.context)
+
+        return TaskFlowResult(summary=summary, task_output=task_results, success=success)
+
+
+class Thought(BaseModel):
+    next_task: str
+    reasoning: str
+    finished: bool = False
+
+    @classmethod
+    def from_str(cls, text: str):
+        text = text.lstrip("```json")
+        text = text.rstrip("```")
+        return cls(**json.loads(text))
+
+
+class RunningThoughtBehavior(BehaviorBase):
+    """
+    This is a behavior flow though uses the concept of 'running thought'
+
+    Instead of a task list that gets resolved, this uses a single mutable 'thought' that changes based on the result
+    of the last task.
+
+    Unlike a task list, there is no hard bounding for this behavior, and it will continue until it thinks its completed
+    the task or it hits `max_thinking`.
+    """
+
+    def __init__(
+            self,
+            root_ai_model: AiModelClient,
+            root_agent: Agent = None,
+            handler_agent: Agent = None,
+            review_agent: Agent = None,
+            context: Context = None,
+            max_thinking: int = 10
+    ):
+        """This behavior first takes the input into a `Thought`..
+
+        The **root_agent** MUST return a JSON str in the format;
+
+        ```json
+        {
+            "next_task": "The next task i need to accomplish",
+            "reasoning": "Why I need to do all these things",
+            "finished": "boolean true/false if you're finished already or not"
+        }
+        ```
+
+        The next_task is then passed to a handler agent for resolution.
+
+        After the agent returns the result, the review agent reviews the result and determines the next step by
+        formulating it into another `Thought`.
+
+        Arguments:
+            root_ai_model: Instance of any class that implements `AiModelClient`,
+            root_agent: Instance of any class that implements `Agent`. This agent is responsible generating the initial
+                `Thought` which defines what the next step is.
+            handler_agent: Instance of any class that implements `Agent`. The Agent is responsible for handling each
+                individual task and will contain the bulk of your logic.
+            review_agent: After each task, this agent reviews the result to determine if the process has finished
+                or if additional steps are required.
+            context: Stores, and provides access to, context for each request. The context at minimum includes the
+                thought history.
+            max_thinking: The hard recurision limit to apply for tasks. A model can only recursively prompt itself
+                this many times before it gives up.
+
+        Examples:
+            >>> from python_to_tools.ptt import TaskFlowBehavior
+            >>> behavior = TaskFlowBehavior(root_ai_model=model)
+            >>> behavior.resolve_from_text("Get the weather in Sydney, Australia")
+        """
+        self.max_thinking = max_thinking
+        self.root_agent = root_agent
+        if not self.root_agent:
+            self.root_agent = Agent(
+                agent_name="root",
+                convo_loader=JinjaConvoLoader(
+                    "thinking_agent.j2",
+                ),
+                model=root_ai_model
+            )
+
+        self.handler_agent = handler_agent
+        if not self.handler_agent:
+            self.handler_agent = Agent(
+                agent_name="default_handler_agent",
+                convo_loader=JinjaConvoLoader(
+                    "single_task_agent.j2",
+                ),
+                model=root_ai_model
+            )
+
+        self.review_agent = review_agent
+        if not self.review_agent:
+            self.review_agent = Agent(
+                agent_name="summary",
+                convo_loader=JinjaConvoLoader(
+                    "thinking_review_agent.j2",
+                ),
+                model=root_ai_model
+            )
+
+        self.context = context
+        if not self.context:
+            self.context = MemoryContext()
+
+    def resolve_from_text(self, msg: str) -> Thought:
+        """Resolve the given text into, first, a thought and then the next task we need to accomplish."""
+        logger.info("Resolving message into Thought")
+        thought = Thought.from_str(self.root_agent.generate_text(msg).content)
+        logger.info(thought.model_dump_json())
+
+        self.context.add_message(content=f"Original user request: {msg}", role=MessageRoleEnum.user)
+
+        i = 0
+        while not thought.finished and i < self.max_thinking:
+            task_result = self.handler_agent.resolve_from_text(thought.next_task)
+            logger.debug(f"{i}/{self.max_thinking} task_result: {task_result}")
+            self.context.add_message(
+                self._task_results_to_text(thought.next_task, task_result), role=MessageRoleEnum.assistant
+            )
+            review_result = self.review_agent.resolve_from_text(task_result, context=self.context)
+            logger.debug(f"{i}/{self.max_thinking} review_result: {review_result}")
+            thought = Thought.from_str(review_result)
+            i += 1
+
+        if not thought.finished:
+            raise ValueError(f"Failed to resolve task after {i} thought/actions.")
+
+        return thought

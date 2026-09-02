@@ -1,16 +1,9 @@
-import sys
-
 import pytest
-import logging
-from python_to_tools.ai.generic_models import MessageRoleEnum, Tool, ToolParameters, ToolParameter
+from python_to_tools.ai.generic_models import MessageRoleEnum, Tool, ToolParameters, ToolParameter, \
+    ImageClassificationRequest
 from python_to_tools.ai.cloudflare.client import CloudflareClient
 from python_to_tools.utils import logger
-from python_to_tools.tests.acceptance.fixtures import env_vars
-
-stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setFormatter(logging.Formatter("#PYTEST#[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"))
-logger.addHandler(stream_handler)
-"""Enable logging for tests and set the format"""
+from python_to_tools.tests.acceptance.fixtures import env_vars, image
 
 @pytest.fixture()
 def cloudflare_text_generation_client_fixture(env_vars):
@@ -23,6 +16,31 @@ def cloudflare_text_generation_client_fixture(env_vars):
         account_id=env_vars.CLOUDFLARE_ACCOUNT_ID,
         model_id="@cf/meta/llama-3.3-70b-instruct-fp8-fast"
     )
+
+@pytest.fixture()
+def cloudflare_image_classification_fixture(env_vars):
+    """Client fixture for cloudflare, skips tests if AI token isn't defined"""
+    if not env_vars.CLOUDFLARE_API_TOKEN:
+        pytest.skip("Cloudflare is not configured")
+
+    return CloudflareClient(
+        api_token=env_vars.CLOUDFLARE_API_TOKEN,
+        account_id=env_vars.CLOUDFLARE_ACCOUNT_ID,
+        model_id="@cf/microsoft/resnet-50"
+    )
+
+@pytest.fixture()
+def cloudflare_image_to_text(env_vars):
+    """Client fixture for cloudflare, skips tests if AI token isn't defined"""
+    if not env_vars.CLOUDFLARE_API_TOKEN:
+        pytest.skip("Cloudflare is not configured")
+
+    return CloudflareClient(
+        api_token=env_vars.CLOUDFLARE_API_TOKEN,
+        account_id=env_vars.CLOUDFLARE_ACCOUNT_ID,
+        model_id="@cf/llava-hf/llava-1.5-7b-hf"
+    )
+
 
 def test_cloudflare_get_response(cloudflare_text_generation_client_fixture):
     """Tests connectivity to the cloudflare API platform and pydantic field validation"""
@@ -78,3 +96,21 @@ def test_cloudflare_execute_tool(cloudflare_text_generation_client_fixture):
     )
     response = cloudflare_text_generation_client_fixture.get_response(request)
     assert response.result.tool_calls
+
+def test_image_classification(image, cloudflare_image_classification_fixture):
+    b = open(image, "rb").read()
+    result = cloudflare_image_classification_fixture.get_image_classification(
+        ImageClassificationRequest(
+            data=b
+        )
+    )
+    assert result
+
+def test_image_to_text(image, cloudflare_image_to_text):
+    b = open(image, "rb").read()
+    result = cloudflare_image_to_text.get_image_to_text(
+        ImageClassificationRequest(
+            data=b
+        )
+    )
+    print(result)
