@@ -44,6 +44,8 @@ jobs:
     permissions:
       contents: write
       issues: read
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+
     outputs:
       released: ${{ steps.release.outputs.new_release_published }}
       tag: ${{ steps.release.outputs.new_release_git_tag }}
@@ -87,3 +89,6 @@ jobs:
             @semantic-release/git@^10.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
