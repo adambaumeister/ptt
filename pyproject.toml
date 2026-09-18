@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-to-tools"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 authors = ["Adam Baumeister <abigserve@gmail.com>"]
 readme = "README.md"
