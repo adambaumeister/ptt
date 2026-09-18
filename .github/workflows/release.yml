@@ -73,13 +73,17 @@ jobs:
         run: |
           poetry version "${VERSION}"
 
-      #- name: Create release and publish to GitHub
-      #  id: release
-      #  uses: cycjimmy/semantic-release-action@0a51e81a6baff2acad3ee88f4121c589c73d0f0e # v4
-      ##  with:
-       #   semantic_version: 19.0
-       #   extra_plugins: |
-       #     conventional-changelog-conventionalcommits@^5.0.0
-       #     @semantic-release/git@^10.0.1
-       # env:
-       #   GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
+      - name: Build Pacakge
+        run: |
+          poetry build
+
+      - name: Create release and publish to GitHub
+        id: release
+        uses: cycjimmy/semantic-release-action@0a51e81a6baff2acad3ee88f4121c589c73d0f0e  v4
+        with:
+          semantic_version: 19.0
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@^5.0.0
+            @semantic-release/git@^10.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
