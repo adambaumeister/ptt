@@ -81,7 +81,7 @@ jobs:
 
       - name: Create release and publish to GitHub
         id: release
-        uses: cycjimmy/semantic-release-action@0a51e81a6baff2acad3ee88f4121c589c73d0f0e  v4
+        uses: cycjimmy/semantic-release-action@0a51e81a6baff2acad3ee88f4121c589c73d0f0e
         with:
           semantic_version: 19.0
           extra_plugins: |
