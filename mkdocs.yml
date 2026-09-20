@@ -27,7 +27,6 @@ nav:
   - Learn:
       - Agents: learn/agents.md
       - Behavior: learn/behavior.md
-      - Context: learn/context.md
       - Functions and Tools: learn/functions.md
   - Configuration:
       - Environment Variables: configuration/envvars.md
